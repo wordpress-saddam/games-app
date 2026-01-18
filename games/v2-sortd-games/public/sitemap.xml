@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+	<loc>https://gameshub.asharq.site/</loc>	
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/headline_scramble</loc>	
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/quiz</loc>	
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/hangman</loc>	
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/leaderboard</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/crossword</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/xox</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/hungry-trail</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/card-pair-challenge</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/tile-merge</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/5-letter</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/sky-hopper</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/block-drop</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/sudoku</loc>	
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://gameshub.asharq.site/games/mine-hunt</loc>	
+	<priority>0.8</priority>
+</url>
+</urlset>

@@ -1,0 +1,77 @@
+
+.blast-shine {
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    transparent 30%, 
+    rgba(255, 255, 255, 0.8) 50%, 
+    transparent 70%);
+  animation: shine 0.8s ease-out forwards;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+.explosion-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, #ff4444, #ff8800);
+  border-radius: 50%;
+  top: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  animation: explode 0.6s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+  pointer-events: none;
+}
+
+@keyframes explode {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(0px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(-20px) scale(0);
+    opacity: 0;
+  }
+}
+
+.mine-cell-exploded {
+  animation: cellExplode 0.8s ease-out forwards;
+}
+
+@keyframes cellExplode {
+  0% {
+    transform: scale(1);
+    background-color: inherit;
+  }
+  25% {
+    transform: scale(1.2);
+    background-color: #ff4444;
+  }
+  50% {
+    transform: scale(1.1);
+    background-color: #ff6666;
+  }
+  100% {
+    transform: scale(1);
+    background-color: #ff8888;
+  }
+}

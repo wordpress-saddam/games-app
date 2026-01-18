@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "Resources": [
+    {
+      "TargetService": {
+        "Type": "AWS::ECS::Service",
+        "Properties": {
+          "TaskDefinition": "arn:aws:ecs:ap-south-1:312669615227:task-definition/asharqgames-uat-task:13",
+          "LoadBalancerInfo": {
+            "ContainerName": "asharqgames-frontend",
+            "ContainerPort": 3002
+          },
+          "PlatformVersion": "1.4.0"
+        }
+      }
+    }
+  ],
+  "Hooks": []
+}

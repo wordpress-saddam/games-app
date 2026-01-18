@@ -1,0 +1,317 @@
+variables:
+  APP_NAME: asharqgames-frontend
+  SERVICE_PATH: asharq-games
+  IMAGE_TAG: "${CI_COMMIT_SHORT_SHA}"
+
+  ECR_REPO_NAME: asharqgames-frontend
+  ECR_REGISTRY: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+  ECR_IMAGE_URI: "${ECR_REGISTRY}/${ECR_REPO_NAME}"
+
+stages:
+  - build_push
+  - deploy
+
+
+build_test_push_frontend:
+  stage: build_push
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "uat"'
+      variables:
+        AWS_REGION: "ap-south-1"
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      variables:
+        AWS_REGION: "eu-west-1"
+
+  script: |
+    set -e
+
+    apk add --no-cache aws-cli jq curl
+
+    aws ecr get-login-password --region "$AWS_REGION" \
+      | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+    cd "$SERVICE_PATH"
+
+    docker build -t ${APP_NAME}:${IMAGE_TAG} .
+
+    echo "IMAGE_URI=${ECR_IMAGE_URI}:${IMAGE_TAG}" > ../frontend.env
+
+    docker run -d --name frontend_test ${APP_NAME}:${IMAGE_TAG}
+    sleep 15
+    docker logs frontend_test || true
+
+    STATUS=$(docker exec frontend_test sh -c \
+      "wget --server-response --spider http://127.0.0.1:3002/ping 2>&1 \
+       | sed -n 's/.*HTTP\\/[0-9.]* \\([0-9][0-9][0-9]\\).*/\\1/p' \
+       | tail -1")
+
+    if [ \"$STATUS\" != \"500\" ] && [ \"$STATUS\" != \"403\" ]; then
+      echo \"Unexpected status: $STATUS\"
+      exit 1
+    fi
+
+    docker rm -f frontend_test
+
+    docker tag ${APP_NAME}:${IMAGE_TAG} ${ECR_IMAGE_URI}:${IMAGE_TAG}
+    docker push ${ECR_IMAGE_URI}:${IMAGE_TAG}
+
+    if [ \"$CI_COMMIT_BRANCH\" = \"main\" ]; then
+      docker tag ${ECR_IMAGE_URI}:${IMAGE_TAG} ${ECR_IMAGE_URI}:latest
+      docker push ${ECR_IMAGE_URI}:latest
+    fi
+
+  artifacts:
+    reports:
+      dotenv: frontend.env
+
+
+deploy_frontend_uat:
+  stage: deploy
+  image:
+    name: amazon/aws-cli:latest
+    entrypoint: [""]
+  needs:
+    - job: build_test_push_frontend
+      artifacts: true
+  environment:
+    name: uat
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "uat"'
+  variables:
+    ECS_TASK_DEFINITION_NAME: "asharqgames-uat-task"
+
+  script: |
+    set -euo pipefail
+    set -x
+
+    echo "IMAGE_URI=${IMAGE_URI:-<empty>}"
+    echo "AWS_REGION=${AWS_REGION:-<empty>}"
+
+    if [ -z "${IMAGE_URI:-}" ]; then
+      echo "ERROR: IMAGE_URI is empty"
+      exit 1
+    fi
+
+    cd "$SERVICE_PATH"
+    pwd
+    ls -la
+
+    jq --version
+    aws --version
+
+    echo "Downloading current task definition..."
+    CURRENT_TASK_DEF=$(aws ecs describe-task-definition \
+      --task-definition "$ECS_TASK_DEFINITION_NAME" \
+      --query 'taskDefinition' \
+      --output json)
+    
+    if [ -z "$CURRENT_TASK_DEF" ] || [ "$CURRENT_TASK_DEF" = "null" ]; then
+      echo "ERROR: Could not retrieve current task definition"
+      exit 1
+    fi
+    
+    echo "Current task definition retrieved successfully"
+    
+
+    echo "$CURRENT_TASK_DEF" | jq '
+      del(.taskDefinitionArn, .revision, .status, .requiresAttributes, 
+          .placementConstraints, .compatibilities, .registeredAt, 
+          .registeredBy, .deregisteredAt)
+    ' > current_taskdef.json
+    
+    echo "Cleaned task definition:"
+    cat current_taskdef.json | jq '.containerDefinitions[0] | {name, image, environment}'
+
+
+    jq \
+      --arg IMAGE "$IMAGE_URI" \
+      --arg REGION "$AWS_REGION" \
+      '
+      .containerDefinitions[0].image = $IMAGE |
+      if .containerDefinitions[0].logConfiguration.options then
+        .containerDefinitions[0].logConfiguration.options["awslogs-region"] = $REGION
+      else . end
+      ' current_taskdef.json > taskdef_rendered.json
+
+    echo "Updated task definition image:"
+    cat taskdef_rendered.json | jq '.containerDefinitions[0].image'
+
+    TASK_DEF_ARN=$(aws ecs register-task-definition \
+      --cli-input-json file://taskdef_rendered.json \
+      --query 'taskDefinition.taskDefinitionArn' \
+      --output text)
+
+    echo "TASK_DEF_ARN=$TASK_DEF_ARN"
+
+    if [ -z "$TASK_DEF_ARN" ]; then
+      echo "ERROR: Task definition ARN is empty"
+      exit 1
+    fi
+
+    jq -n \
+      --arg TASK_DEF "$TASK_DEF_ARN" \
+      '{
+        version: 1,
+        Resources: [
+          {
+            TargetService: {
+              Type: "AWS::ECS::Service",
+              Properties: {
+                TaskDefinition: $TASK_DEF,
+                LoadBalancerInfo: {
+                  ContainerName: "asharqgames-frontend",
+                  ContainerPort: 3002
+                },
+                PlatformVersion: "1.4.0"
+              }
+            }
+          }
+        ],
+        Hooks: []
+      }' > appspec.json
+
+    echo "Generated AppSpec:"
+    cat appspec.json | jq .
+
+
+    echo "Creating CodeDeploy deployment..."
+    
+
+    jq -n \
+      --argjson appspec "$(cat appspec.json)" \
+      '{
+        revisionType: "AppSpecContent",
+        appSpecContent: {
+          content: ($appspec | tostring)
+        }
+      }' > revision.json
+    
+    echo "Revision file content:"
+    cat revision.json | jq .
+    
+    aws deploy create-deployment \
+      --application-name "$CODEDEPLOY_APP_NAME" \
+      --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP_FRONTEND" \
+      --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+      --revision file://revision.json
+
+
+
+deploy_frontend_prod:
+  stage: deploy
+  image:
+    name: amazon/aws-cli:latest
+    entrypoint: [""]
+  needs:
+    - job: build_test_push_frontend
+      artifacts: true
+  environment:
+    name: main
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+  variables:
+    ECS_TASK_DEFINITION_NAME: "asharqgames-prod-task"
+
+  script: |
+    set -e
+
+    test -n "$IMAGE_URI"
+    cd "$SERVICE_PATH"
+
+    echo "Downloading current task definition..."
+    CURRENT_TASK_DEF=$(aws ecs describe-task-definition \
+      --task-definition "$ECS_TASK_DEFINITION_NAME" \
+      --query 'taskDefinition' \
+      --output json)
+    
+    if [ -z "$CURRENT_TASK_DEF" ] || [ "$CURRENT_TASK_DEF" = "null" ]; then
+      echo "ERROR: Could not retrieve current task definition"
+      exit 1
+    fi
+    
+    echo "Current task definition retrieved successfully"
+    
+
+    echo "$CURRENT_TASK_DEF" | jq '
+      del(.taskDefinitionArn, .revision, .status, .requiresAttributes, 
+          .placementConstraints, .compatibilities, .registeredAt, 
+          .registeredBy, .deregisteredAt)
+    ' > current_taskdef.json
+    
+    echo "Cleaned task definition:"
+    cat current_taskdef.json | jq '.containerDefinitions[0] | {name, image, environment}'
+
+
+    jq \
+      --arg IMAGE "$IMAGE_URI" \
+      --arg REGION "$AWS_REGION" \
+      '
+      .containerDefinitions[0].image = $IMAGE |
+      if .containerDefinitions[0].logConfiguration.options then
+        .containerDefinitions[0].logConfiguration.options["awslogs-region"] = $REGION
+      else . end
+      ' current_taskdef.json > taskdef_rendered.json
+
+    echo "Updated task definition image:"
+    cat taskdef_rendered.json | jq '.containerDefinitions[0].image'
+
+    TASK_DEF_ARN=$(aws ecs register-task-definition \
+      --cli-input-json file://taskdef_rendered.json \
+      --query 'taskDefinition.taskDefinitionArn' \
+      --output text)
+
+    echo "TASK_DEF_ARN=$TASK_DEF_ARN"
+
+    if [ -z "$TASK_DEF_ARN" ]; then
+      echo "ERROR: Task definition ARN is empty"
+      exit 1
+    fi
+
+    jq -n \
+      --arg TASK_DEF "$TASK_DEF_ARN" \
+      '{
+        version: 1,
+        Resources: [
+          {
+            TargetService: {
+              Type: "AWS::ECS::Service",
+              Properties: {
+                TaskDefinition: $TASK_DEF,
+                LoadBalancerInfo: {
+                  ContainerName: "asharqgames-frontend",
+                  ContainerPort: 3002
+                },
+                PlatformVersion: "1.4.0"
+              }
+            }
+          }
+        ],
+        Hooks: []
+      }' > appspec.json
+
+    echo "Creating CodeDeploy deployment..."
+    
+    jq -n \
+      --argjson appspec "$(cat appspec.json)" \
+      '{
+        revisionType: "AppSpecContent",
+        appSpecContent: {
+          content: ($appspec | tostring)
+        }
+      }' > revision.json
+    
+    echo "Revision file content:"
+    cat revision.json | jq .
+    
+    aws deploy create-deployment \
+      --application-name "$CODEDEPLOY_APP_NAME" \
+      --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP_FRONTEND" \
+      --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+      --revision file://revision.json

@@ -1,0 +1,38 @@
+{
+  "family": "asharqgames-uat-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+
+  "executionRoleArn": "arn:aws:iam::312669615227:role/asharqgames-uat-ecs-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::312669615227:role/asharqgames-uat-ecs-task-role",
+
+  "containerDefinitions": [
+    {
+      "name": "asharqgames-frontend",
+      "image": "PLACEHOLDER_IMAGE",
+      "essential": true,
+
+      "portMappings": [
+        {
+          "containerPort": 3002,
+          "protocol": "tcp"
+        }
+      ],
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/asharqgames-uat",
+          "awslogs-region": "PLACEHOLDER_REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+
+      "environment": [
+        { "name": "NODE_ENV", "value": "uat" }
+      ]
+    }
+  ]
+}

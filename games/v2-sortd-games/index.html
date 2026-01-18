@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asharq Games</title>
+  <link rel="canonical" id="canonical-link" href="https://gameshub.asharq.site/" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+
+  <meta name="description" content="Play Asharq Games online for free! Enjoy puzzle games, challenge your brain, and have fun
+  matching items in engaging gameplay." />
+
+  <meta property="og:title" content="Asharq Games - Free Online Puzzle Games, Crossword, Sudoku, Math Puzzles and more" />
+  <meta property="og:description" content="Play Asharq Games online for free! Enjoy puzzle games, challenge your brain, and have fun
+  matching items in engaging gameplay." />
+  <meta property="og:image" content="https://gameshub.asharq.site/assets/asharq-logo-CUOI9HY3.svg" />
+  <meta property="og:url" id="og-url" content="https://gameshub.asharq.site/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Asharq Games" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Asharq Games - Free Online Puzzle Games, Crossword, Sudoku, Math Puzzles and more" />
+  <meta name="twitter:description" content="Play Asharq Games online for free! Enjoy puzzle games, challenge your brain, and have fun
+  matching items in engaging gameplay." />
+  <meta name="twitter:image" content="https://gameshub.asharq.site/assets/asharq-logo-CUOI9HY3.svg" />
+  <link rel="icon" href="public/favicon.ico" type="image/x-icon" id="favicon-link" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    (function () {
+      // Function to get current page URL
+      function getCurrentPageUrl() {
+        return window.location.origin + window.location.pathname + window.location.search;
+      }
+
+      // Function to update dynamic URLs
+      function updateDynamicUrls() {
+        const currentUrl = getCurrentPageUrl();
+        
+        // Update canonical link
+        const canonicalLink = document.getElementById('canonical-link');
+        if (canonicalLink) {
+          canonicalLink.setAttribute('href', currentUrl);
+        } else {
+          // Create canonical link if it doesn't exist
+          const link = document.createElement('link');
+          link.id = 'canonical-link';
+          link.rel = 'canonical';
+          link.href = currentUrl;
+          document.head.appendChild(link);
+        }
+        
+        // Update og:url meta tag
+        let ogUrlMeta = document.getElementById('og-url');
+        if (!ogUrlMeta) {
+          ogUrlMeta = document.createElement('meta');
+          ogUrlMeta.id = 'og-url';
+          ogUrlMeta.setAttribute('property', 'og:url');
+          document.head.appendChild(ogUrlMeta);
+        }
+        ogUrlMeta.setAttribute('content', currentUrl);
+      }
+
+      // Function to check if we're on the homepage
+      function isHomepage() {
+        const pathname = window.location.pathname;
+        return pathname === "/" || pathname === "";
+      }
+
+      // Function to remove CollectionPage schema
+      function removeCollectionPageSchema() {
+        const existingScript = document.querySelector('script[data-collection-page-schema="true"]');
+        if (existingScript) {
+          existingScript.remove();
+        }
+      }
+
+      function removeOrganizationSchema() {
+        const existingScript = document.querySelector('script[data-organization-schema="true"]');
+        if (existingScript) {
+          existingScript.remove();
+        }
+      }
+      
+      function addOrganizationSchema() {
+        removeOrganizationSchema();
+        
+        const currentUrl = getCurrentPageUrl();
+        const schema = {
+          "@context": "https://schema.org",
+          "@type": "NewsMediaOrganization",
+          "url": currentUrl,
+          "name": "ألعاب الشرق",
+          "alternateName": "Asharq Games",
+          "logo": "https://gameshub.asharq.site/assets/asharq-logo-CUOI9HY3.svg",
+          "description": "الشرق هي مؤسسة إعلامية مستقلة متكاملة الأذرع والمنصات تتبع شركة الشرق للخدمات الإخبارية المحدودة. وشركة الشرق للخدمات الإخبارية المحدودة، مسجلة في مركز دبي المالي العالمي، ومملوكة لـ المجموعة السعودية للأبحاث والتسويق وهي شركة مساهمة عامة",
+          "sameAs": [
+            "https://www.facebook.com/asharqnews",
+            "https://twitter.com/Asharqnews",
+            "https://www.instagram.com/asharqnews/",
+            "https://www.youtube.com/c/asharqnews",
+            "https://www.linkedin.com/company/asharqnews/"
+          ]
+        };
+        const script = document.createElement("script");
+        script.type = "application/ld+json";
+        script.setAttribute("data-organization-schema", "true");
+        script.text = JSON.stringify(schema);
+        document.head.appendChild(script);
+      }
+
+      // Function to add CollectionPage schema
+      function addCollectionPageSchema() {
+        // Remove any existing schema first
+        removeCollectionPageSchema();
+
+        const currentUrl = getCurrentPageUrl();
+        const schema = {
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "@id": "https://gameshub.asharq.site",
+          "name": "Asharq Games",
+          "description": "Browse and play our latest online games",
+          "url": currentUrl,
+          "mainEntity": {
+            "@type": "ItemList",
+            "itemListOrder": "https://schema.org/ItemListOrderAscending",
+            "numberOfItems": 13,
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "item": { "@type": "VideoGame", "name": "Quiz", "url": "https://gameshub.asharq.site/games/quiz" }},
+              { "@type": "ListItem", "position": 2, "item": { "@type": "VideoGame", "name": "Headline Scramble Arabic", "url": "https://gameshub.asharq.site/games/headline_scramble_arabic" }},
+              { "@type": "ListItem", "position": 3, "item": { "@type": "VideoGame", "name": "Crossword", "url": "https://gameshub.asharq.site/games/crossword" }},
+              { "@type": "ListItem", "position": 4, "item": { "@type": "VideoGame", "name": "Hangman Arabic", "url": "https://gameshub.asharq.site/games/hangman-arabic" }},
+              { "@type": "ListItem", "position": 5, "item": { "@type": "VideoGame", "name": "Sudoku", "url": "https://gameshub.asharq.site/games/sudoku" }},
+              { "@type": "ListItem", "position": 6, "item": { "@type": "VideoGame", "name": "Card Pair Challenge", "url": "https://gameshub.asharq.site/games/card-pair-challenge" }},
+              { "@type": "ListItem", "position": 7, "item": { "@type": "VideoGame", "name": "Hungry Trail", "url": "https://gameshub.asharq.site/games/hungry-trail" }},
+              { "@type": "ListItem", "position": 8, "item": { "@type": "VideoGame", "name": "XOX", "url": "https://gameshub.asharq.site/games/xox" }},
+              { "@type": "ListItem", "position": 9, "item": { "@type": "VideoGame", "name": "Block Drop", "url": "https://gameshub.asharq.site/games/block-drop" }},
+              { "@type": "ListItem", "position": 10, "item": { "@type": "VideoGame", "name": "Sky Hopper", "url": "https://gameshub.asharq.site/games/sky-hopper" }},
+              { "@type": "ListItem", "position": 11, "item": { "@type": "VideoGame", "name": "5 Letter", "url": "https://gameshub.asharq.site/games/5-letter" }},
+              { "@type": "ListItem", "position": 12, "item": { "@type": "VideoGame", "name": "Tile Merge", "url": "https://gameshub.asharq.site/games/tile-merge" }},
+              { "@type": "ListItem", "position": 13, "item": { "@type": "VideoGame", "name": "Mine Hunt", "url": "https://gameshub.asharq.site/games/mine-hunt" }}
+            ]
+          }
+        };
+
+        const script = document.createElement("script");
+        script.type = "application/ld+json";
+        script.setAttribute("data-collection-page-schema", "true");
+        script.text = JSON.stringify(schema);
+        document.head.appendChild(script);
+      }
+
+      // Add Organization Schema
+      addOrganizationSchema();
+
+      // Initial update on page load
+      updateDynamicUrls();
+      if (isHomepage()) {
+        addCollectionPageSchema();
+      } else {
+        removeCollectionPageSchema();
+      }
+
+      // Monitor URL changes for SPA navigation (React Router)
+      let lastPathname = window.location.pathname;
+      let lastSearch = window.location.search;
+      
+      // Function to handle URL changes
+      function handleUrlChange() {
+        const currentPathname = window.location.pathname;
+        const currentSearch = window.location.search;
+        
+        if (currentPathname !== lastPathname || currentSearch !== lastSearch) {
+          lastPathname = currentPathname;
+          lastSearch = currentSearch;
+          
+          // Update dynamic URLs
+          updateDynamicUrls();
+          
+          // Update CollectionPage schema
+          if (isHomepage()) {
+            addCollectionPageSchema();
+          } else {
+            removeCollectionPageSchema();
+          }
+        }
+      }
+      
+      // Use MutationObserver to detect route changes
+      const observer = new MutationObserver(function() {
+        handleUrlChange();
+      });
+
+      // Observe the document for changes
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+
+      // Also listen to popstate events (browser back/forward)
+      window.addEventListener('popstate', function() {
+        handleUrlChange();
+      });
+
+      // Periodic check as backup (for React Router navigation)
+      setInterval(function() {
+        handleUrlChange();
+      }, 100);
+    })();
+  </script>  
+  
+  <script>
+    (function() {
+      const configUrl = {        
+        "localhost": {
+          title: "Asharq Games",
+          favicon: "public/favicon.ico"
+        }
+      };
+      
+      const currentDomain = window.location.hostname;
+      const config = configUrl[currentDomain] || { 
+        title: "Asharq Games", 
+        favicon: "public/favicon.ico" 
+      };
+      
+      // Function to update favicon
+      function updateFavicon(faviconPath) {
+        const faviconLink = document.getElementById('favicon-link') || document.querySelector('link[rel="icon"]');
+        if (faviconLink) {
+          faviconLink.href = faviconPath;
+        } else {
+          // Create new favicon link if it doesn't exist
+          const newFaviconLink = document.createElement('link');
+          newFaviconLink.rel = 'icon';
+          newFaviconLink.type = 'image/x-icon';
+          newFaviconLink.href = faviconPath;
+          newFaviconLink.id = 'favicon-link';
+          document.head.appendChild(newFaviconLink);
+        }
+      }
+      
+      // Function to update title based on current page
+      function updateTitle(gameName = null) {
+        let title;
+        if (gameName && gameName.toLowerCase() !== 'home') {
+          // For game pages: "Game Name - Domain"
+          title = `${gameName} - ${config.title}`;
+        } else {
+          // For home page: Only domain name
+          title = config.title;
+        }
+        
+        document.title = title;
+        
+        // Update meta tags
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription) {
+          const description = gameName 
+            ? `Play ${gameName} on ${config.title} for free!`
+            : `Play classic web games on ${config.title} - XOX, Hungry Trail, Card Pair Challenge for free!`;
+          metaDescription.setAttribute('content', description);
+        }
+        
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) {
+          ogTitle.setAttribute('content', title);
+        }
+        
+        const ogDescription = document.querySelector('meta[property="og:description"]');
+        if (ogDescription) {
+          const description = gameName 
+            ? `Play ${gameName} on ${config.title} for free!`
+            : `Play classic web games on ${config.title} - XOX, Hungry Trail, Card Pair Challenge for free!`;
+          ogDescription.setAttribute('content', description);
+        }
+      }
+      
+      // Initial setup
+      updateTitle();
+      updateFavicon(config.favicon);
+      
+      // Make updateTitle function globally available for your React app
+      window.updatePageTitle = updateTitle;
+      
+      // Monitor title changes and override if needed
+      const originalTitle = document.title;
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'childList' && mutation.target === document.querySelector('title')) {
+            const currentTitle = document.title;
+            // If React sets title to "Home | Domain", override it
+            if (currentTitle.toLowerCase().includes('home |') || currentTitle.toLowerCase().includes('home - ')) {
+              document.title = config.title;
+            }
+          }
+        });
+      });
+      
+      // Start observing title changes
+      const titleElement = document.querySelector('title');
+      if (titleElement) {
+        observer.observe(titleElement, { childList: true, subtree: true });
+      }
+      
+      // Also use a periodic check as backup
+      setInterval(() => {
+        const currentTitle = document.title;
+        if (currentTitle.toLowerCase().includes('home |') || currentTitle.toLowerCase().includes('home - ')) {
+          document.title = config.title;
+        }
+      }, 100);
+      
+      // Optional: Auto-detect game from URL path
+      const path = window.location.pathname;
+      if (path && path !== '/') {
+        const gameName = path.substring(1).split('/')[0];
+        const gameNames = {
+          'xox': 'XOX',
+          'hungry-trail': 'Hungry Trail',
+          'card-pair-challenge': 'Card Pair Challenge',
+        };
+        
+        if (gameNames[gameName]) {
+          updateTitle(gameNames[gameName]);
+        }
+      }
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
