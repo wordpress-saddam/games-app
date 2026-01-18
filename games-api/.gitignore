@@ -48,5 +48,5 @@ config/gcp-service-account.json
 node_modules/
 package-lock.json
 core_libs/node_modules/games-api/apps/devapi/vertex_ai_config.json
-games-api/apps/devapi/vertex_ai_config.json
 apps/devapi/vertex_ai_config.example.json
+apps/devapi/vertex_ai_config.json
