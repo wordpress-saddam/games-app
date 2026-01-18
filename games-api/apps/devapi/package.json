@@ -1,0 +1,25 @@
+{
+  "name": "devapi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mayank",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "elastic-apm-node": "^3.15.0",
+    "express": "^4.17.1",
+    "express-session": "^1.18.2",
+    "google-auth-library": "^8.7.0",
+    "googleapis": "^111.0.0",
+    "md5": "^2.3.0",
+    "morgan": "^1.10.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "uuid": "^9.0.1"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "project_id": "your-project-id",
+  "client_email": "service-account@project.iam.gserviceaccount.com",
+  "private_key": "PASTE_PRIVATE_KEY_HERE"
+}
+

@@ -2,7 +2,7 @@
 apps/devapi/package-lock.json
 apps/admin/package-lock.json
 apps/admin-frontend/package-lock.json
-
+i
 
 #node modules
 apps/devapi/node_modules
@@ -47,4 +47,6 @@ config/gcp-service-account.json
 .cursor/
 node_modules/
 package-lock.json
-core_libs/node_modules/
+core_libs/node_modules/games-api/apps/devapi/vertex_ai_config.json
+games-api/apps/devapi/vertex_ai_config.json
+

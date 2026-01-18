@@ -1,0 +1,48 @@
+/* Import Arabic font */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Arabic font support */
+[dir="rtl"] body,
+[dir="rtl"] * {
+  font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* RTL support - Use logical properties */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="ltr"] {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Drawer positioning for RTL/LTR */
+[dir="rtl"] .MuiDrawer-paper,
+[dir="rtl"] .css-1lwhjos-MuiPaper-root-MuiDrawer-paper {
+  right: 0 !important;
+  left: auto !important;
+}
+
+[dir="ltr"] .MuiDrawer-paper,
+[dir="ltr"] .css-1lwhjos-MuiPaper-root-MuiDrawer-paper {
+  left: 0 !important;
+  right: auto !important;
+}
