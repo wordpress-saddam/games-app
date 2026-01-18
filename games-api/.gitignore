@@ -1,0 +1,50 @@
+# package-lock.json
+apps/devapi/package-lock.json
+apps/admin/package-lock.json
+apps/admin-frontend/package-lock.json
+
+
+#node modules
+apps/devapi/node_modules
+apps/admin/node_modules
+apps/admin-frontend/node_modules
+
+# build react build directory
+apps/admin-frontend/build
+
+
+# package-lock.json and node_modules of core_libs
+core_libs/package-lock.json
+core_libs/node_modules
+
+#config files
+apps/devapi/config/config.js
+apps/admin/config/config.js
+apps/admin-frontend/config/config.js
+
+
+#log files
+logs/devapi.log
+logs/admin.log
+logs/admin-frontend.log
+
+
+#env files
+apps/devapi/.env
+apps/admin/.env
+apps/admin-frontend/.env
+core_libs/.env
+
+
+# apps/devapi/temp
+config/config.js
+
+#google-cloud service config
+config/gcp-service-account.json
+.env
+.vscode/
+.cursorignore
+.cursor/
+node_modules/
+package-lock.json
+core_libs/node_modules/
