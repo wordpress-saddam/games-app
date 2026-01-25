@@ -174,7 +174,7 @@ console.log(Game);
                 >
                   {emoji[actualRank] || actualRank}
                 </div>
-                <h3 className="font-bold text-xs text-slate-800 dark:text-white truncate max-w-[70px]">
+                <h3 className="font-bold text-xs text-slate-800 dark:text-white truncate max-w-[120px]">
                   {" "}
                   {player.user_name}
                 </h3>

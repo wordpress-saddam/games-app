@@ -17,19 +17,21 @@ import ContinueSection from "../components/ContinueCard";
 import { useUser } from "../context/UserContext";
 import type { UseEmblaCarouselType } from "embla-carousel-react"; // Changed to UseEmblaCarouselType
 import { useIsFetching } from "@tanstack/react-query";
+import MostReadSidebar from "../components/MostReadSidebar";
 import Flappy from "../assets/Flappy.jpg";
-import Sudoku from "../assets/sudoku.jpg";
+import Sudoku from "../assets/tile-merge.png";
 import Tetris from "../assets/tetris.jpg";
 import Letter5 from "../assets/letter5.jpg"
-import Memory from "../assets/memory.jpg"
-import Snake from "../assets/snake.jpg"
-import Xox from "../assets/Xox.jpg"
-import Game2048 from "../assets/game2048.jpg";
-import ScrambleArabic from "../assets/scrumble.jpg";
-import Mines from "../assets/mines.jpg"
-import Crossword_arabic from "../assets/arabic-crossword.png";
-import HangmanNew from "../assets/hangman-new.png";
-import quiz_arabic from "../assets/quiz.jpg";
+import Memory from "../assets/card-pair.png"
+import Snake from "../assets/hungry-trail.png"
+import Xox from "../assets/xox.png"
+import Game2048 from "../assets/tile-merge.png";
+import ScrambleArabic from "../assets/headline-scramble.png";
+import Mines from "../assets/mine-hunt.png"
+import Crossword_arabic from "../assets/crossword.png";
+import HangmanNew from "../assets/hangman.png";
+import quiz_arabic from "../assets/quiz.png";
+import GamesMainHeadline from "../components/ui/GamesMainHeadline";
 
 const arabicDomains = [
   "asharqgames-uat.sortd.pro",
@@ -70,12 +72,12 @@ const gamesDataBase = [
     translationKey: "tileMerge",
     imageUrl: Game2048
   },
-  {
-    game_id: "26e13b67-725d-4c41-b82e-c02be550f67a",
-    game_type: "5-letter",
-    translationKey: "fiveLetter",
-    imageUrl: Letter5
-  },
+  // {
+  //   game_id: "26e13b67-725d-4c41-b82e-c02be550f67a",
+  //   game_type: "5-letter",
+  //   translationKey: "fiveLetter",
+  //   imageUrl: Letter5
+  // },
   {
     game_id: "8343eabd-0072-4bd0-8fd4-e219d3f5a1f3",
     game_type: "sky-hopper",
@@ -137,7 +139,8 @@ const gamesCache = {
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 const Index = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const { user } = useUser();
   const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
@@ -348,17 +351,26 @@ console.log("games : ", games);
   return (
     <Layout>
       <section className="py-8">      
-        <div className="container mx-auto">
-        <h1 className="text-2xl font-semibold">{t("common.h1tagline")}</h1>
-          {/* {isMobile && ( */}
-          <div className=" mb-8">
-            <h2 className="text-xl lg:text-2xl leading-snug font-serif italic text-gray-600 dark:text-gray-400">
-              {greet}{" "}
-              <span className="text-xl lg:text-2xl font-semibold dark:text-white">
-                {user?.username}
-              </span>
-            </h2>
-          </div>
+        <div className="container mx-auto px-4">
+          {/* Page Title */}
+          {/* <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {t("common.h1tagline")}
+            </h1>
+            <div className="w-24 h-1 bg-red-600 mx-auto"></div>
+          </div> */}
+
+          {/* Greeting */}
+          {user?.username && (
+            <div className="mb-8">
+              <h2 className="text-xl lg:text-2xl leading-snug font-serif italic text-gray-600 dark:text-gray-400">
+                {greet}{" "}
+                <span className="text-xl lg:text-2xl font-semibold dark:text-white">
+                  {user?.username}
+                </span>
+              </h2>
+            </div>
+          )}
 
           {/* Loading indicator */}
           {isLoading && (
@@ -376,77 +388,95 @@ console.log("games : ", games);
 
           {/* Continue Playing Section */}
           <ContinueSection search={searchParams.toString()} />
-          {/* Featured Games Section */}
-          {isArabicDomain && (
-            <div className="mt-6 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">{t("common.featuredGames")}</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pr-2">
-                {arabicGamesData.map((game) => (
-                  <GameCardStatic
-                    key={game.game_type}
-                    id={game.game_type}
-                    title={game.display_name}
-                    description={game?.desc}
-                    imageUrl={game.imageUrl}
-                    search={searchParams.toString()}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Trending Games Section */}
-          <div className="mt-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold">{t("common.trendingGames")}</h3>
-            </div>
+          {/* Main Content: Games Grid + Most Read Sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            {/* Games Grid - Takes 2 columns on large screens */}
+            <div className="lg:col-span-2">
+              {/* Featured Games Section */}
+              {isArabicDomain && (
+                <div className="mb-8">
+                  <GamesMainHeadline title={t("common.games")} width={isRTL ? 120 : 144} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {arabicGamesData.map((game) => (
+                      <GameCardStatic
+                        key={game.game_type}
+                        id={game.game_type}
+                        title={game.display_name}
+                        description={game?.desc}
+                        imageUrl={game.imageUrl}
+                        search={searchParams.toString()}
+                        translationKey={game.translationKey}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {showAllTrending ? (
-              // Grid view with hidden scrollbar
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pr-2">
-                {gamesSections.last.map((game) => (
-                  <GameCardStatic
-                    key={game.game_type}
-                    id={game.game_type}
-                    title={game.display_name}
-                    description={game?.desc}
-                    imageUrl={game.imageUrl}
-                    search={searchParams.toString()}
+              {/* Trending Games Section */}
+              <div className="mb-8">
+                {/* <div className="mb-6">
+                  <h3 className="text-2xl font-black text-black dark:text-white mb-2">
+                    {t("common.trendingGames")}
+                  </h3>
+                  <div className={`h-1 flex ${isRTL ? 'flex-row' : 'flex-row-reverse'}`}>
+                    <div className="flex-1 bg-black"></div>
+                    <div className="w-16 bg-red-600"></div>
+                  </div>
+                </div> */}
 
-                  />
-                ))}
-              </div>
-            ) : (
-              // Carousel view
-              <Carousel
-                opts={{
-                  align: "start",
-                  loop: true,
-                }}
-                className="w-full"
-              >
-                <CarouselContent className="-ml-2 md:-ml-4">
-                  {gamesSections.last.map((game) => (
-                    <CarouselItem
-                      key={game.game_type}
-                      className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
-                    >
+                {showAllTrending ? (
+                  // Grid view - 2 columns
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {gamesSections.last.map((game) => (
+                      <GameCardStatic
+                        key={game.game_type}
+                        id={game.game_type}
+                        title={game.display_name}
+                        description={game?.desc}
+                        imageUrl={game.imageUrl}
+                        search={searchParams.toString()}
+                        translationKey={game.translationKey}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  // Carousel view
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: true,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-2 md:-ml-4">
+                      {gamesSections.last.map((game) => (
+                        <CarouselItem
+                          key={game.game_type}
+                          className="pl-2 md:pl-4 basis-full sm:basis-1/2"
+                        >
                       <GameCardStatic
                         id={game.game_type}
                         title={game.display_name}
                         description={game?.desc}
                         imageUrl={game.imageUrl}
                         search={searchParams.toString()}
+                        translationKey={game.translationKey}
                       />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="hidden md:flex" />
-                <CarouselNext className="hidden md:flex" />
-              </Carousel>
-            )}
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="hidden md:flex" />
+                    <CarouselNext className="hidden md:flex" />
+                  </Carousel>
+                )}
+              </div>
+            </div>
+
+            {/* Most Read Sidebar - Takes 1 column on large screens */}
+            <div className="lg:col-span-1">
+              <MostReadSidebar />
+            </div>
           </div>
         </div>
       </section>

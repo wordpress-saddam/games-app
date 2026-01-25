@@ -1,41 +1,82 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Trash2, User, LogOut, Settings, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import { useClickOutside } from "../hooks/useClickOutside";
-import { SunIcon, MoonIcon, GamepadIcon, ChevronDownIcon } from "lucide-react";
+import { SunIcon, MoonIcon } from "lucide-react";
 import { Link, useLocation, useSearchParams, useNavigate, To } from "react-router-dom";
-import GamesServices from "../../v2-services/games-service";
-import { configUrl, defaultConfig, asharqLogoConfig } from "../config/site";
+import { asharqLogoConfig } from "../config/site";
 import UserRegistrationDialog from "./UserRegistrationDialog";
-// Google SSO - kept for future use, currently disabled
-// import GoogleLoginButton from "./GoogleLoginButton";
 import KeycloakLoginButton from "./KeycloakLoginButton";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "react-i18next";
-
-
-
-
-import SortdLogo from "../assets/sortd.png";
 import AsharqLogo from "../assets/asharq-logo.svg";
 import { useUser } from "../context/UserContext";
 
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+const NAV_MENUS = [
+  {
+    to: "/politics/",
+    en: "Politics",
+    ar: "سياسة",
+    hidden: false,
+  },
+  {
+    to: "/defense/",
+    en: "Defense",
+    ar: "دفاع",
+    hidden: false,
+  },
+  {
+    to: "/technology/",
+    en: "Technology",
+    ar: "تكنولوجيا",
+    hidden: false,
+  },
+  {
+    to: "/health/",
+    en: "Health",
+    ar: "صحة",
+    hidden: false,
+  },
+  {
+    to: "/science/",
+    en: "Science",
+    ar: "علوم",
+    hidden: "md", // hidden on md, visible on lg
+  },
+  {
+    to: "/art/",
+    en: "Art",
+    ar: "فن",
+    hidden: "md",
+  },
+  {
+    to: "/culture/",
+    en: "Culture",
+    ar: "ثقافة",
+    hidden: "md",
+  },
+  {
+    to: "/videos/",
+    en: "Video",
+    ar: "فيديو",
+    hidden: "md",
+  },
+  {
+    to: "/variety/",
+    en: "Last Page",
+    ar: "الصفحة الأخيرة",
+    hidden: "md",
+  },
+];
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const [searchParams] = useSearchParams();
   const isArticleView = searchParams.get("src") === "article";
 
@@ -54,18 +95,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, mobileMenuOpen);
 
   const originalGames = [
-    { id: "xox", name: "XOX Grid" },
-    { id: "5-letter", name: "5-Letter Guess" },
-    { id: "sky-hopper", name: "Sky Hopper" },
-    { id: "block-drop", name: "Block Drop Puzzle" },
-    { id: "mine-hunt", name: "Mine Hunt Logic" },
+    { id: "xox", name: t("games.xox.name") },
+    { id: "5-letter", name: t("games.fiveLetter.name") },
+    { id: "sky-hopper", name: t("games.skyHopper.name") },
+    { id: "block-drop", name: t("games.blockDrop.name") },
+    { id: "mine-hunt", name: t("games.mineHunt.name") },
   ];
 
   const newGames = [
-    { id: "hungry-trail", name: "Hungry Trail" },
-    { id: "card-pair-challenge", name: "Card Pair Challenge" },
-    { id: "sudoku", name: "Sudoku" },
-    { id: "tile-merge", name: "Tile Merge Puzzle" },
+    { id: "hungry-trail", name: t("games.hungryTrail.name") },
+    { id: "card-pair-challenge", name: t("games.cardPairChallenge.name") },
+    { id: "sudoku", name: t("games.sudoku.name") },
+    { id: "tile-merge", name: t("games.tileMerge.name") },
   ];
 
   function getGreeting() {
@@ -171,7 +212,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
 
     return (
-      <div className="relative" ref={dropdownRef}>
+      <div className="relative z-[100]" ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:opacity-80 transition-opacity group"
@@ -181,18 +222,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </span>
           <ChevronDown
             size={16}
-            className={`ml-1 transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"}`}
+            className={`transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"} ${isArabic ? 'ml-1' : 'mr-1'}`}
             aria-hidden="true"
           />
         </button>
 
         {/* Dropdown Menu */}
-        <div
-          className={`absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-md shadow-lg z-50 transition-all duration-200 origin-top-right ${isOpen
-            ? "opacity-100 scale-100 translate-y-0"
-            : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-            }`}
-        >
+        {isOpen && (
+          <div
+            className={`absolute top-full mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl z-[9999] ${isArabic ? "left-0" : "right-0"}`}
+          >
           <div className="py-2">
             {/* User Info */}
             <div className="px-4 py-2 border-b border-border">
@@ -203,8 +242,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {user?.city || user?.region || user?.country}
               </p>
             </div>
-
-
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
@@ -212,10 +249,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <LogOut size={16} />
               <span>{t("common.logout")}</span>
             </button>
-
-
           </div>
         </div>
+        )}
       </div>
     );
   };
@@ -248,153 +284,240 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isArticleView && <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-8 py-4 flex items-center justify-between">
-          <Link to={getLinkWithParams("/")} className="flex items-center gap-2">
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text ">
-              {logoComponent}
-            </span>
-          </Link>
+      {!isArticleView && (
+        <>
+          {/* Top Dark Header */}
+          <nav className="sticky top-0 z-20 w-full bg-black border-gray-300">
+            <div className="w-full">
+              <div className={`h-9 md:h-10 w-full flex items-center justify-start overflow-x-auto md:justify-center scrollbar-hide ${isArabic ? 'pr-3' : 'pl-3'}`}>
+                {/* Navigation Links with Dotted Borders */}
+                <Link 
+                  to="https://now.asharq.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className={`flex-shrink-0 ${isArabic ? 'border-l pl-3 md:pl-6 lg:pl-[34px]' : 'border-r pr-3 md:pr-6 lg:pr-[34px]'} border-dotted border-white/40`}
+                >
+                  <span className="text-white text-xs md:text-sm font-medium whitespace-nowrap">الشرق NOW</span>
+                </Link>
+                <Link 
+                  to="https://asharqbusiness.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className={`flex-shrink-0 ${isArabic ? 'border-l px-3 md:px-6 lg:pl-[34px]' : 'border-r px-3 md:px-6 lg:pr-[34px]'} border-dotted border-white/40`}
+                >
+                  <span className="text-white text-xs md:text-sm font-medium whitespace-nowrap">اقتصاد الشرق مع Bloomberg</span>
+                </Link>
+                <Link 
+                  to="https://sports.asharq.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className={`flex-shrink-0 ${isArabic ? 'border-l px-3 md:px-6 lg:pl-[34px]' : 'border-r px-3 md:px-6 lg:pr-[34px]'} border-dotted border-white/40`}
+                >
+                  <span className="text-white text-xs md:text-sm font-medium whitespace-nowrap">الشرق رياضة</span>
+                </Link>
+                <Link 
+                  to="https://asharqbusiness.com/radio/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className={`flex-shrink-0 ${isArabic ? 'px-3 md:px-6 lg:pr-[34px]' : 'px-3 md:px-6 lg:pl-[34px]'} border-dotted border-white/40`}
+                >
+                  <span className="text-white text-xs md:text-sm font-medium whitespace-nowrap">راديو الشرق</span>
+                </Link>
+              </div>
+            </div>
+          </nav>
 
-          <div className="hidden md:flex items-center gap-4">
-            <NavigationMenu className={cn(user?.username ? "" : "md:mr-10")}>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger>{t("common.trendingGames")}</NavigationMenuTrigger>
-                  <NavigationMenuContent className="right-0 left-auto">
-                    <div className="w-[280px] p-4">
-                      <div className="grid gap-2">
-                        {newGames.map((game) => (
-                          <NavigationMenuLink key={game.id} asChild>
-                            <Link to={getLinkWithParams(`/games/${game.id}`)}
-                              className={cn(
-                                "flex items-center justify-between p-3 rounded-md leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                                location.pathname === `/games/${game.id}`
-                                  ? "bg-muted"
-                                  : ""
-                              )}
-                              onClick={(e) => handleTrendingClick(e, game.id)}
-                            >
-                              <span className="text-sm font-medium">
-                                {game.name}
-                              </span>
-                              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                                {t("common.new")}
-                              </span>
-                            </Link>
-                          </NavigationMenuLink>
-                        ))}
-                      </div>
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
+          {/* Main Navigation Bar */}
+          <div className="hidden md:flex border-b-2 border-t-4 md:border-t-8 lg:border-t-[8px] md:border-b-8 lg:border-b-[8px] bg-white dark:bg-gray-900 sticky top-[36px] md:top-[40px] z-10">
+            <div className="container mx-auto w-full">
+              <div className="flex w-full flex-col pt-1">
+                <div className="flex w-full flex-row pt-1.5">
+                  {/* Left: Hamburger Menu + Logo */}
+                  <div className="flex flex-shrink-0 flex-row">
+                    <Link to={getLinkWithParams("/")} className="mr-6 self-end pb-2 md:mr-3 md:pb-[6px] lg:mr-3">
+                      {logoComponent}
+                    </Link>
+                  </div>
 
-            <LanguageSwitcher />
-
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <SunIcon size={20} />
-              ) : (
-                <MoonIcon size={20} />
-              )}
-            </button>
-
-            {user?.username ? (
-              <ProfileDropdown user={user} />
-            ) : (
-              <KeycloakLoginButton variant="default" size="sm" />
-            )}
-          </div>
-          {/* Mobile menu */}
-          <div className="flex md:hidden items-center gap-2">
-            <LanguageSwitcher />
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <SunIcon size={20} />
-              ) : (
-                <MoonIcon size={20} />
-              )}
-            </button>
-
-            <div className="relative" ref={mobileMenuRef}>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-md hover:bg-muted transition-colors"
-              >
-                <GamepadIcon size={20} />
-                <span className="sr-only">Menu</span>
-              </button>
-
-              {mobileMenuOpen && (
-                <div className="absolute right-0 top-12 w-64 bg-background border border-border rounded-lg shadow-lg z-50">
-                  <div className="p-4">
-                    <div className="mb-4">
-                      <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-                        {t("common.trendingGames")}
-                      </h3>
-                      <div className="space-y-2">
-                        {newGames.map((game) => (
-                          <Link
-                            key={game.id} to={getLinkWithParams(`/games/${game.id}`)}
-                            className={cn(
-                              "flex items-center justify-between p-2 rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-                              location.pathname === `/games/${game.id}`
-                                ? "bg-muted"
-                                : ""
-                            )}
-                            onClick={(e) => handleTrendingClick(e, game.id, true)}
+                  {/* Right Section */}
+                  <div className="flex w-full flex-col">
+                    {/* Main Navigation Row */}
+                    <div className="mr-0 flex h-full flex-row items-end justify-end pt-[2px] md:mr-7 md:justify-start md:pt-0 lg:mr-10">
+                      {/* Navigation Links */}
+                      <div className="hidden w-full md:mr-4 md:flex">
+                      <ul className="nav-bar-ul flex cursor-pointer flex-row">
+                        {NAV_MENUS.map((item) => (
+                          <li
+                            key={item.to}
+                            className={`relative flex cursor-pointer items-center pb-3 pt-2 mr-4 lg:mr-8 bg-transparent border-b-4 border-transparent
+                              ${item.hidden === "md" ? "md:hidden lg:flex" : ""}
+                            `}
                           >
-                            <span className="font-medium">{game.name}</span>
-                            <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                              {t("common.new")}
-                            </span>
-                          </Link>
+                            <Link
+                              to={item.to}
+                              className="cursor-pointer text-sm font-bold leading-5 lg:text-base lg:leading-6 text-gray-700 dark:text-gray-300"
+                            >
+                              {isArabic ? item.ar : item.en}
+                            </Link>
+                          </li>
                         ))}
+                      </ul>
                       </div>
-                    </div>
 
-                    {/* {user?.username && (
-                      <div className="pt-4 border-t">
-                        <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
-                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                            {user.username.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="text-sm font-medium">
-                            {user.username}
-                          </span>
+                      <div className="mx-auto px-4 lg:px-8 py-2">
+                        <div className="flex items-center justify-end gap-4">
+
+                          <LanguageSwitcher />
+
+                          <button
+                            onClick={toggleTheme}
+                            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            aria-label="Toggle theme"
+                          >
+                            {theme === "dark" ? (
+                              <SunIcon size={20} />
+                            ) : (
+                              <MoonIcon size={20} />
+                            )}
+                          </button>
+
+                          {user?.username ? (
+                            <ProfileDropdown user={user} />
+                          ) : (
+                            <KeycloakLoginButton variant="default" size="sm" />
+                          )}
                         </div>
                       </div>
-                    )} */}
+                    </div>
                   </div>
                 </div>
-              )}
-
-            </div>
-            <div>
-              {user?.username ? (
-                <ProfileDropdown user={user} />
-              ) : (
-                <KeycloakLoginButton variant="outline" size="sm" />
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      </header>}
 
-      {!isArticleView && location.pathname !== "/" && (
+          {/* Mobile Navigation Bar */}
+          <div className="flex md:hidden border-b-2 border-t-4 md:border-t-8 lg:border-t-[8px] md:border-b-8 lg:border-b-[8px] bg-white dark:bg-gray-900 sticky top-[36px] md:top-[40px] z-10">
+            <div className="mx-auto w-full">
+              <div className="flex w-full flex-col pt-1">
+                <div className="flex w-full flex-row pt-1.5">
+                  {/* Left: Hamburger Menu + Logo */}
+                  <div className="flex flex-shrink-0 flex-row">
+                    <div className="relative flex w-12 items-center self-end">
+                      <button
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className={`relative mb-3 h-6 w-6 cursor-pointer md:mb-[18px] ${isArabic ? 'mr-[15px] md:mr-0' : 'ml-[15px] md:ml-0'}`}
+                        aria-label="Menu"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          className="hover-menu text-black dark:text-white"
+                          fill="currentColor"
+                        >
+                          <path d="M0 0h24v24H0z" fill="none" />
+                          <path d="M1.5 3h21v3h-21V3zm0 7.5h21v3h-21v-3zm0 7.5h21v3h-21v-3z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <Link to={getLinkWithParams("/")} className={`self-end pb-2 md:pb-[6px] ${isArabic ? 'mr-1 ml-2 md:mr-3 lg:mr-3' : 'ml-1 mr-2 md:ml-3 lg:ml-3 lg:mr-3'}`}>
+                      {logoComponent}
+                    </Link>
+                  </div>
+
+                  {/* Right Section */}
+                  <div className="flex w-full flex-col">
+                    {/* Main Navigation Row */}
+                    <div className="mr-0 flex h-full flex-row justify-end md:mr-7 md:justify-start md:pt-0 lg:mr-10">
+                      <div className="flex lg:hidden items-center gap-2">
+                        <LanguageSwitcher />
+                        <button
+                          onClick={toggleTheme}
+                          className="p-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          aria-label="Toggle theme"
+                        >
+                          {theme === "dark" ? (
+                            <SunIcon size={16} />
+                          ) : (
+                            <MoonIcon size={16} />
+                          )}
+                        </button>
+                        {user?.username ? (
+                          <ProfileDropdown user={user} />
+                        ) : (
+                          <KeycloakLoginButton variant="outline" size="sm" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile menu */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setMobileMenuOpen(false)}>
+              <div 
+                className="absolute right-0 top-0 h-full w-64 bg-background border-l border-border shadow-lg overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+                ref={mobileMenuRef}
+              >
+                <div className="p-4">
+                  <div className="mb-4">
+                      <ul className="nav-bar-ul flex cursor-pointer flex-col">
+                        {NAV_MENUS.map((item) => (
+                          <li
+                            key={item.to}
+                            className={`relative flex cursor-pointer items-center pb-3 pt-2 mr-4 lg:mr-8 bg-transparent border-b-4 border-transparent
+                              ${item.hidden === "md" ? "md:hidden lg:flex" : ""}
+                            `}
+                          >
+                            <Link
+                              to={item.to}
+                              className="cursor-pointer text-sm font-bold leading-5 lg:text-base lg:leading-6 text-gray-700 dark:text-gray-300"
+                            >
+                              {isArabic ? item.ar : item.en}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    {/* <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+                      {t("common.trendingGames")}
+                    </h3> */}
+                    
+                    {/* <div className="space-y-2">
+                      {newGames.map((game) => (
+                        <Link
+                          key={game.id} to={getLinkWithParams(`/games/${game.id}`)}
+                          className={cn(
+                            "flex items-center justify-between p-2 rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+                            location.pathname === `/games/${game.id}`
+                              ? "bg-muted"
+                              : ""
+                          )}
+                          onClick={(e) => handleTrendingClick(e, game.id, true)}
+                        >
+                          <span className="font-medium">{game.name}</span>
+                          <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                            {t("common.new")}
+                          </span>
+                        </Link>
+                      ))}
+                    </div> */}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* {!isArticleView && location.pathname !== "/" && (
         <div className="container mx-auto px-4 pt-2">
           <Link
-            to={getLinkWithParams("/")}
+            to="/" 
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <svg
@@ -415,7 +538,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {t("common.backToHome")}
           </Link>
         </div>
-      )}
+      )} */}
 
       <main className="flex-1">{children}</main>
 
@@ -432,7 +555,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p className="flex justify-center items-center gap-x-2">
             © {new Date().getFullYear()} {t("footer.poweredBy")}
-            <a href="https://sortd.mobi"><img src={AsharqLogo} alt="Sortd" className="h-5" /></a>
+            <a href="https://gameshub.asharq.site/"><img src={AsharqLogo} alt="Sortd" className="h-5" /></a>
           </p>
         </div>
       </footer>}

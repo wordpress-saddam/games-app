@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { addGameToContinue } from "./ContinueGamesUtils";
 import { sendCustomEvent } from "../analytics/ga";
+import { useTranslation } from "react-i18next";
 // import { getItem } from "../utils/localstorage";
 import UserRegistrationDialog from "./UserRegistrationDialog";
 
@@ -13,7 +14,7 @@ interface GameCardProps {
   imageUrl: string;
   thumbnailUrl?: string;
   search?: string; // Add this line
-
+  translationKey?: string; // Translation key for i18n support
 }
 
 interface User {
@@ -28,20 +29,35 @@ const GameCardStatic: React.FC<GameCardProps> = ({
   imageUrl,
   thumbnailUrl,
   search,
+  translationKey,
 }) => {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const navigate = useNavigate();
   const { user } = useUser();
   const [showDialog, setShowDialog] = useState(false);
 
   const navigateToGame = (userToUse: User) => {
     const userId = userToUse?.user_id || "anonymous";
-    addGameToContinue(userToUse?.username, {
+    
+    // Store translation keys instead of translated text for language support
+    const gameData: any = {
       id: id,
-      title,
-      description,
       imageUrl: imageUrl || '',
       gameType: 'static'
-  }, userId);
+    };
+    
+    // If translationKey is available, store it; otherwise store the translated text as fallback
+    if (translationKey) {
+      gameData.titleKey = `games.${translationKey}.name`;
+      gameData.descriptionKey = `games.${translationKey}.description`;
+    } else {
+      // Fallback: store the translated text if no translation key is available
+      gameData.title = title;
+      gameData.description = description;
+    }
+    
+    addGameToContinue(userToUse?.username, gameData, userId);
     sendCustomEvent("game_card_click", {
       game_id: id,
       game_title: title,
@@ -68,41 +84,67 @@ const GameCardStatic: React.FC<GameCardProps> = ({
   return (
     <>
       <div
-        className="game-card relative h-48 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+        className="game-card bg-white dark:bg-gray-800 border border-[#E8E8E8] flex flex-col h-full cursor-pointer group transition-all duration-300 hover:shadow-md"
         onClick={handlePlayClick}
       >
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
-          style={{ backgroundImage: `url(${imageUrl})` }}
-        />
-
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-
-        <div className="relative h-full flex items-end p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white/20 bg-black/20 backdrop-blur-sm flex-shrink-0">
-              <div
-                className="w-full h-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${thumbnailUrl || imageUrl})` }}
-              />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-white text-xl font-bold tracking-wide drop-shadow-lg">
-                {title}
-              </h2>
-              {/* <p className="text-white font-semibold text-sm mt-1 line-clamp-2">
-                {description}
-              </p> */}
-            </div>
+        {/* Game Title and Image Row with Gray Background */}
+        <div className="bg-[#E5E5E5] dark:bg-[#000000] p-4 pb-0 flex items-center gap-4">
+          {/* Game Image */}
+          <div className="w-32 h-32 flex-shrink-0 bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden p-[15px] rounded-t-[20px] rounded-b-none
+                relative top-[15px]">
+            <img
+              src={imageUrl}
+              alt={title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
           </div>
+          
+          {/* Game Title */}
+          <h2 className="text-[28px] font-black text-gray-900 dark:text-white flex-1">
+            {title}
+          </h2>
         </div>
 
-        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
-            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-              <div className="w-0 h-0 border-l-[6px] border-l-black border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent ml-1"></div>
+        {/* Game Description */}
+        <div className="p-4 flex-1">
+          <p className="text-[15px] leading-[25px] font-semibold text-gray-700 dark:text-gray-300 line-clamp-3">
+            {description}
+          </p>
+        </div>
+
+
+        {/* Play Now Button - Smaller */}
+        <div className={`${isRTL ? 'pl-8' : 'pr-8'} pt-0 pb-0 flex justify-end`}>
+          <button
+            className="bg-black dark:bg-gray-900 text-white py-2.5 px-4 rounded-t-sm rounded-b-none text-sm font-medium flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePlayClick();
+            }}
+          >
+            <span className="text-sm font-bold font-[700]">{t("common.playNow")}</span>
+            <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center font-bold font-[700]">
+              <svg
+                className={`w-3 h-3 text-white flex-shrink-0 ${isRTL ? '' : 'rotate-180'}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
             </div>
-          </div>
+
+          </button>
         </div>
       </div>
 

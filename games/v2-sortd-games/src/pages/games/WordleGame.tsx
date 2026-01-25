@@ -13,8 +13,8 @@ import { useTranslation } from "react-i18next";
 import { formatNumberForDisplay } from "../../utils/numberFormatter";
 import { useGameSchema } from "../../hooks/useGameSchema";
 
-// List of 5-letter words for the game
-const WORDS = [
+// List of 5-letter English words for the game
+const ENGLISH_WORDS = [
   "apple", "beach", "chair", "dance", "eagle", "flame", "ghost", "heart", 
   "igloo", "jumbo", "koala", "lemon", "movie", "night", "ocean", "piano", 
   "queen", "river", "sunny", "tiger", "umbra", "vocal", "watch", "yacht", 
@@ -24,13 +24,24 @@ const WORDS = [
   "dream", "enjoy", "flute", "glove", "haunt", "ivory", "jelly", "knife"
 ];
 
+// List of 5-letter Arabic words for the game (exactly 5 characters each)
+const ARABIC_WORDS = [
+  "مدرسة", "سيارة", "طائرة", "مدينة", "مستشفى", "مطعم", "فندق", "مطار",
+  "محطة", "حديقة", "كنيسة", "مكتبة", "متحف", "ملعب", "مسبح", "صيدلية",
+  "مصنع", "مزرعة", "بستان", "غابة", "بحيرة", "جزيرة", "عاصمة", "منطقة",
+  "ميدان", "مكتبة", "مستشفى", "مطعم", "فندق", "مطار", "محطة", "حديقة",
+  "كنيسة", "متحف", "ملعب", "مسبح", "صيدلية", "مصنع", "مزرعة", "بستان",
+  "غابة", "بحيرة", "جزيرة", "عاصمة", "منطقة", "ميدان", "مدرسة", "سيارة",
+  "طائرة", "مدينة", "مستشفى", "مطعم", "فندق", "مطار", "محطة", "حديقة"
+];
+
 
 const MAX_ATTEMPTS = 6;
 
 type GameStatus = 'playing' | 'won' | 'lost' | 'idle';
 
 const WordleGame = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {user} = useUser()
   const navigate = useNavigate()
   const location = useLocation();
@@ -42,18 +53,21 @@ const WordleGame = () => {
   const [showStats, setShowStats] = useState(false);
   const [keyboardStatus, setKeyboardStatus] = useState<{[key: string]: 'correct' | 'present' | 'absent' | 'unused'}>({});
   
+  // Detect current language
+  const isArabic = i18n.language === 'ar';
+  
   // Game schema for SEO
   const baseUrl = typeof window !== "undefined" 
     ? `${window.location.protocol}//${window.location.host}` 
     : "https://asharqgames-uat.sortd.pro";
   const gameUrl = `${baseUrl}${location.pathname}${location.search ? location.search : ""}`;
-  const gameName = "Wordle";
+  const gameName = t("games.fiveLetter.name");
   
   useGameSchema(
     {
       name: gameName,
-      headline: `${gameName} - Asharq Games`,
-      description: "Play Wordle to test your word skills!",
+      headline: `${gameName} - ${t("common.asharqGames")}`,
+      description: t("games.fiveLetter.description"),
       url: gameUrl,
       image: `${baseUrl}/assets/wordle.jpg`,
       isAccessibleForFree: true,
@@ -70,31 +84,42 @@ const WordleGame = () => {
   });
   
   // Get a random word
-  const getRandomWord = () => {
-    return WORDS[Math.floor(Math.random() * WORDS.length)].toUpperCase();
-  };
+  const getRandomWord = useCallback(() => {
+    const words = isArabic ? ARABIC_WORDS : ENGLISH_WORDS;
+    const word = words[Math.floor(Math.random() * words.length)];
+    return isArabic ? word : word.toUpperCase();
+  }, [isArabic]);
   
   // Initialize the game
-  const startNewGame = () => {
+  const startNewGame = useCallback(() => {
     const word = getRandomWord();
     setTargetWord(word);
     setAttempts([]);
     setCurrentAttempt('');
     setGameStatus('playing');
     setKeyboardStatus({});
-  };
+  }, [getRandomWord]);
+  
+  // Restart game when language changes
+  useEffect(() => {
+    if (gameStatus !== 'idle' && targetWord) {
+      startNewGame();
+    }
+  }, [isArabic, gameStatus, targetWord, startNewGame]);
   
   // Handle keyboard or virtual keyboard input
   const handleKeyPress = useCallback((key: string) => {
     if (gameStatus !== 'playing') return;
     
-    if (key === 'ENTER') {
+    if (key === 'ENTER' || key === 'دخول') {
       if (currentAttempt.length !== 5) {
         toast.error(t("games.fiveLetter.wordMustBe5Letters"));
         return;
       }
       
-      if (!WORDS.includes(currentAttempt.toLowerCase())) {
+      const words = isArabic ? ARABIC_WORDS : ENGLISH_WORDS;
+      const checkWord = isArabic ? currentAttempt : currentAttempt.toLowerCase();
+      if (!words.includes(checkWord)) {
         toast.error(t("games.fiveLetter.notInWordList"));
         return;
       }
@@ -118,12 +143,19 @@ const WordleGame = () => {
         updateStats(0);
         toast(t("games.fiveLetter.betterLuckNextTimeTheWordWas", { word: targetWord }));
       }
-    } else if (key === 'BACKSPACE') {
+    } else if (key === 'BACKSPACE' || key === 'مسح') {
       setCurrentAttempt(prevAttempt => prevAttempt.slice(0, -1));
-    } else if (/^[A-Z]$/.test(key) && currentAttempt.length < 5) {
-      setCurrentAttempt(prevAttempt => prevAttempt + key);
+    } else {
+      // Handle letter input - support both English and Arabic
+      const isValidLetter = isArabic 
+        ? /^[\u0600-\u06FF]$/.test(key)  // Arabic Unicode range
+        : /^[A-Z]$/.test(key);          // English uppercase
+      
+      if (isValidLetter && currentAttempt.length < 5) {
+        setCurrentAttempt(prevAttempt => prevAttempt + key);
+      }
     }
-  }, [currentAttempt, attempts, gameStatus, targetWord, keyboardStatus]);
+  }, [currentAttempt, attempts, gameStatus, targetWord, keyboardStatus, isArabic, t]);
   
   // Update keyboard status based on the current attempt
   const updateKeyboardStatus = (attempt: string, keyboardStatus: {[key: string]: string}) => {
@@ -169,8 +201,16 @@ const WordleGame = () => {
         handleKeyPress('ENTER');
       } else if (e.key === 'Backspace') {
         handleKeyPress('BACKSPACE');
-      } else if (/^[a-zA-Z]$/.test(e.key)) {
-        handleKeyPress(e.key.toUpperCase());
+      } else if (isArabic) {
+        // Handle Arabic keyboard input
+        if (/^[\u0600-\u06FF]$/.test(e.key)) {
+          handleKeyPress(e.key);
+        }
+      } else {
+        // Handle English keyboard input
+        if (/^[a-zA-Z]$/.test(e.key)) {
+          handleKeyPress(e.key.toUpperCase());
+        }
       }
     };
     
@@ -179,14 +219,14 @@ const WordleGame = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleKeyPress, gameStatus]);
+  }, [handleKeyPress, gameStatus, isArabic]);
   
   // Start game when component mounts
   useEffect(() => {
     if (gameStatus === 'idle') {
       startNewGame();
     }
-  }, [gameStatus]);
+  }, [gameStatus, startNewGame]);
   
   // Get the color for a letter in an attempt
   const getLetterColor = (attempt: string, index: number) => {
@@ -217,33 +257,50 @@ const WordleGame = () => {
   
   // Render the keyboard
   const renderKeyboard = () => {
-    const rows = [
+    if(!user){
+      navigate('/');
+      return null;
+    }
+    
+    // Arabic keyboard layout
+    const arabicRows = [
+      ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج', 'د'],
+      ['ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك', 'ط'],
+      ['دخول', 'ئ', 'ء', 'ؤ', 'ر', 'لا', 'ى', 'ة', 'و', 'ز', 'ظ', 'مسح']
+    ];
+    
+    // English keyboard layout
+    const englishRows = [
       ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
       ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
       ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACKSPACE']
     ];
-
-     if(!user){
-    navigate('/');
-  }
+    
+    const rows = isArabic ? arabicRows : englishRows;
     
     return (
-      <div className="mt-4 select-none">
+      <div className={`mt-4 select-none ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
         {rows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex justify-center mb-2">
-            {row.map((key) => (
-              <button
-                key={key}
-                className={`${
-                  key === 'ENTER' || key === 'BACKSPACE' 
-                    ? 'px-2 text-xs sm:text-sm w-14 sm:w-16' 
-                    : 'w-8 sm:w-10'
-                } h-12 sm:h-14 mx-0.5 rounded font-bold border ${getKeyColor(key)}`}
-                onClick={() => handleKeyPress(key)}
-              >
-                {key === 'BACKSPACE' ? '⌫' : key}
-              </button>
-            ))}
+            {row.map((key) => {
+              const isEnter = key === 'ENTER' || key === 'دخول';
+              const isBackspace = key === 'BACKSPACE' || key === 'مسح';
+              const displayKey = isBackspace ? '⌫' : key;
+              
+              return (
+                <button
+                  key={key}
+                  className={`${
+                    isEnter || isBackspace
+                      ? 'px-2 text-xs sm:text-sm w-14 sm:w-16' 
+                      : 'w-8 sm:w-10'
+                  } h-12 sm:h-14 mx-0.5 rounded font-bold border ${getKeyColor(key)}`}
+                  onClick={() => handleKeyPress(key)}
+                >
+                  {displayKey}
+                </button>
+              );
+            })}
           </div>
         ))}
       </div>
@@ -289,14 +346,14 @@ const WordleGame = () => {
             </div>
             
             {/* Game board */}
-            <div className="p-4 sm:p-6 flex flex-col items-center justify-center">
+            <div className={`p-4 sm:p-6 flex flex-col items-center justify-center ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
               <div className="mb-4 w-full max-w-xs">
                 {Array.from({ length: MAX_ATTEMPTS }).map((_, rowIndex) => {
                   const attempt = attempts[rowIndex] || '';
                   const isCurrentRow = rowIndex === attempts.length && gameStatus === 'playing';
                   
                   return (
-                    <div key={rowIndex} className="flex justify-center mb-2">
+                    <div key={rowIndex} className={`flex ${isArabic ? 'justify-center' : 'justify-center'} mb-2`}>
                       {Array.from({ length: 5 }).map((_, colIndex) => {
                         const letter = attempt[colIndex] || (isCurrentRow ? currentAttempt[colIndex] : '');
                         
@@ -353,17 +410,23 @@ const WordleGame = () => {
                 <p>{t("games.fiveLetter.afterEachGuessTheColorOfTheTilesWillChangeToShowHowCloseYourGuessWasToTheWord")}</p>
                 
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-green-500 text-white font-bold flex items-center justify-center">W</div>
-                    <span>{t("games.fiveLetter.theLetterIsInTheWordAndInTheCorrectSpot", { letter: "W" })}</span>
+                  <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <div className="w-10 h-10 bg-green-500 text-white font-bold flex items-center justify-center">
+                      {isArabic ? 'ك' : 'W'}
+                    </div>
+                    <span>{t("games.fiveLetter.theLetterIsInTheWordAndInTheCorrectSpot", { letter: isArabic ? 'ك' : 'W' })}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-yellow-500 text-white font-bold flex items-center justify-center">I</div>
-                    <span>{t("games.fiveLetter.theLetterIsInTheWordButInTheWrongSpot", { letter: "I" })}</span>
+                  <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <div className="w-10 h-10 bg-yellow-500 text-white font-bold flex items-center justify-center">
+                      {isArabic ? 'ت' : 'I'}
+                    </div>
+                    <span>{t("games.fiveLetter.theLetterIsInTheWordButInTheWrongSpot", { letter: isArabic ? 'ت' : 'I' })}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-muted text-muted-foreground font-bold flex items-center justify-center">U</div>
-                    <span>{t("games.fiveLetter.theLetterIsNotInTheWordInAnySpot", { letter: "U" })}</span>
+                  <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <div className="w-10 h-10 bg-muted text-muted-foreground font-bold flex items-center justify-center">
+                      {isArabic ? 'ض' : 'U'}
+                    </div>
+                    <span>{t("games.fiveLetter.theLetterIsNotInTheWordInAnySpot", { letter: isArabic ? 'ض' : 'U' })}</span>
                   </div>
                 </div>
               </div>

@@ -30,8 +30,15 @@ import {
 import GamesServices from "../../../v2-services/games-service";
 import { useUser } from "../../context/UserContext";
 import { useTranslation } from "react-i18next";
-import { formatNumber, formatNumberForDisplay } from "../../utils/numberFormatter";
+import { formatNumber } from "../../utils/numberFormatter";
 import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import { LightButton, BlueButton } from "../../components/ui/GamesButton";
+import TetrisImage from "../../assets/tetris.jpg";
 
 const TETRIMINOS = {
   I: { shape: [[1, 1, 1, 1]], color: "bg-cyan-500" },
@@ -87,7 +94,8 @@ function getRandomTetrimino(): TetriminoType {
 }
 
 const TetrisGame = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const { user } = useUser();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -582,11 +590,11 @@ const TetrisGame = () => {
               </div>
               <div className="mb-4 text-lg">
                 {t("games.blockDrop.finalScore")}:{" "}
-                <span className="font-bold text-primary">{formatNumberForDisplay(score)}</span>
+                <span className="font-bold text-primary">{score}</span>
               </div>
               <Button onClick={startGame} size="lg">
-                <RefreshCw className="mr-2" size={20} />
                 {t("common.playAgain")}
+                <RefreshCw className="mr-2" size={20} />
               </Button>
             </div>
           </div>
@@ -630,18 +638,18 @@ const TetrisGame = () => {
     );
   };
 
-  const params = new URLSearchParams({
+  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
     name: "Block Drop Puzzle",
     duration: "month",
     game_type: "block-drop",
     top_k: "10",
     sort_order: "desc",
     score_type: "max",
-  });
+  }).toString()}`;
 
   const handleLeaderBoard = () => {
     if (gameOver || score == 0) {
-      navigate(`/games/leaderboard?${params.toString()}`);
+      navigate(leaderboardUrl);
     } else {
       setDialog(true);
     }
@@ -654,76 +662,76 @@ const TetrisGame = () => {
 
   return (
     <Layout>
-      <div className="game-area">
-        <div className="game-container">
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h1 className="text-2xl md:text-3xl font-bold">
-                {t("games.blockDrop.name")}
-              </h1>
-              {!user?.isAnonymous && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleLeaderBoard}
-                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-                    aria-label={t("common.leaderboard")}
-                  >
-                    <Trophy size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("common.leaderboard")}</TooltipContent>
-              </Tooltip>
-              )}
-            </div>
-          </div>
-
-          {!gameStarted && (
-            <div className="text-center mb-4 p-4 bg-muted/50 rounded-lg">
-              <p className="text-muted-foreground">
-                {t("games.blockDrop.clickStartToBeginYouCanAlsoUseArrowKeysOnDevicesWithAKeyboard")}
-              </p>
-            </div>
-          )}
-
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full md:w-[70%]">
-              <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    {t("games.blockDrop.score")} : {formatNumber(score)}
-                  </Button>
-
-                  <Button variant="outline" size="sm">
-                    {t("games.blockDrop.level")} : {formatNumberForDisplay(level)}
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    {t("games.blockDrop.lines")} : {formatNumberForDisplay(lines)}
-                  </Button>
+      <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
+        <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+          <div className="game-container3" translate="no">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+              {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                {/* Header Section */}
+                <div className="mb-6" translate="no">
+                  <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                    <div className="flex items-center gap-2">
+                      <img src={TetrisImage} alt="Tetris Logo" className="w-20 h-20" />
+                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.blockDrop.name")}</h2>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Leaderboard Button */}
+                      {!user?.isAnonymous && (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+                      )}
+                      {/* Back to Home Button */}
+                      <BackToHome text={t("common.backToHome")} />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetGame}
-                    className="bg-muted flex items-center gap-1 hover:bg-red-100 hover:text-red-700"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {!isMobile && t("common.reset")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowControls(true)}
-                    className="bg-muted flex items-center gap-2"
-                  >
-                    <HelpCircle className="mr-1 h-4 w-4" /> {t("common.help")}
-                  </Button>
-                </div>
-              </div>
+
+                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Help Button */}
+                      <LightButton onClick={() => setShowControls(true)}>
+                        {t("common.help")}
+                        <HelpCircle className={isArabic ? "ml-1 h-4 w-4" : "mr-1 h-4 w-4"} />
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Score Button */}
+                      <LightButton>
+                        {t("games.blockDrop.score")}: {formatNumber(score)}
+                      </LightButton>
+                      {/* Level Button */}
+                      <LightButton>
+                        {t("games.blockDrop.level")}: {level}
+                      </LightButton>
+                      {/* Lines Button */}
+                      <LightButton>
+                        {t("games.blockDrop.lines")}: {lines}
+                      </LightButton>
+                      {/* Reset Button */}
+                      <LightButton onClick={resetGame}>
+                        {!isMobile && t("common.reset")}
+                        <RotateCcw className={isArabic ? "ml-1 h-4 w-4" : "mr-1 h-4 w-4"} />
+                      </LightButton>
+                    </div>
+                  </div>
 
               {/* Game Area */}
               <div className="flex justify-center items-start gap-6 my-4 p-2">
+              {!isMobile && (
+                  <div className="bg-card border border-[#DEDEDE] rounded-[5px] p-4 shadow-sm mb-4">
+                    <div className="text-sm text-muted-foreground mb-3 text-center font-medium">
+                      {t("games.blockDrop.next")}
+                    </div>
+                    <div className="flex justify-center">
+                      {renderNextTetrimino()}
+                    </div>
+                  </div>
+                )}
                 <div>{renderBoard()}</div>
 
                 {isMobile && (
@@ -802,84 +810,75 @@ const TetrisGame = () => {
                   </Button>
                 </div>
               </div>
-            </div>
-
-            {/* Right sidebar */}
-            <div className="w-full md:w-[30%]">
-              {!isMobile && (
-                <div className="bg-card border rounded-lg p-4 shadow-sm mb-4">
-                  <div className="text-sm text-muted-foreground mb-3 text-center font-medium">
-                    {t("games.blockDrop.next")}
-                  </div>
-                  <div className="flex justify-center">
-                    {renderNextTetrimino()}
-                  </div>
                 </div>
-              )}
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t("common.howToPlay")}</CardTitle>
-                </CardHeader>
+              {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1">
+                
 
-                <CardContent className="text-sm space-y-2">
-                  {!gameStarted && !isMobile && (
-                    <div className="text-center mb-4 p-2 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground">
+                <HowToPlayInstruction 
+                  title={t("common.howToPlay")}
+                  text=""
+                >
+                  <div className="text-[16px] space-y-3 text-white">
+                    {!gameStarted && !isMobile && (
+                      <p className="text-center mb-4 p-2 bg-white/10 rounded-lg">
                         {t("games.blockDrop.pressAnyArrowKeyToStartTheGame")}
                       </p>
-                    </div>
-                  )}
+                    )}
 
-                  {!isMobile && (
-                    <div className="text-sm">
-                      <div className="flex mb-2 justify-between">
-                        <span>{t("games.blockDrop.moveLeft")}</span>
-                        <kbd className="px-2 py-1 bg-muted rounded">←</kbd>
+                    {!isMobile && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span>{t("games.blockDrop.moveLeft")}</span>
+                          <kbd className="px-2 py-1 bg-white/20 rounded text-white">←</kbd>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>{t("games.blockDrop.moveRight")}</span>
+                          <kbd className="px-2 py-1 bg-white/20 rounded text-white">→</kbd>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">
+                            {t("games.blockDrop.dropPieceTapAgainAfterItSettlesToDropTheNextOne")}
+                          </span>
+                          <kbd className="px-2 py-1 bg-white/20 rounded text-white">↓</kbd>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>{t("games.blockDrop.rotate")}</span>
+                          <kbd className="px-2 py-1 bg-white/20 rounded text-white">↑</kbd>
+                        </div>
                       </div>
-                      <div className="flex mb-2 justify-between">
-                        <span>{t("games.blockDrop.moveRight")}</span>
-                        <kbd className="px-2 py-1 bg-muted rounded">→</kbd>
-                      </div>
-                      <div className="flex mb-2 justify-between">
-                        <span>
-                          {t("games.blockDrop.dropPieceTapAgainAfterItSettlesToDropTheNextOne")}
-                        </span>
-                        <kbd className="px-2 py-1 bg-muted rounded">↓</kbd>
-                      </div>
-                      <div className="flex mb-2 justify-between">
-                        <span>{t("games.blockDrop.rotate")}</span>
-                        <kbd className="px-2 py-1 bg-muted rounded">↑</kbd>
-                      </div>
-                    </div>
-                  )}
+                    )}
 
-                  {isMobile && (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>{t("games.blockDrop.moveLeftRight")}</span>
-                        <span>{t("games.blockDrop.buttons")}</span>
+                    {isMobile && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>{t("games.blockDrop.moveLeftRight")}</span>
+                          <span>{t("games.blockDrop.buttons")}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">
+                            {t("games.blockDrop.dropPieceTapAgainAfterItSettlesToDropTheNextOne")}
+                          </span>
+                          <span>{t("games.blockDrop.button")}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>{t("games.blockDrop.rotateButton")}</span>
+                          <span>{t("games.blockDrop.rotatePiece")}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span>
-                          {t("games.blockDrop.dropPieceTapAgainAfterItSettlesToDropTheNextOne")}
-                        </span>
-                        <span>{t("games.blockDrop.button")}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>{t("games.blockDrop.rotateButton")}</span>
-                        <span>{t("games.blockDrop.rotatePiece")}</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                  </div>
+                </HowToPlayInstruction>
+                <MostReadSidebar />
+              </div>
             </div>
           </div>
 
           {/* Dialogs */}
           <Dialog open={showControls} onOpenChange={setShowControls}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl" dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>{t("games.blockDrop.howToPlayBlockDropPuzzle")}</DialogTitle>
                 <DialogDescription>
@@ -930,7 +929,7 @@ const TetrisGame = () => {
           </Dialog>
 
           <Dialog open={dialog} onOpenChange={setDialog}>
-            <DialogContent>
+            <DialogContent dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>{t("common.leaveGame")}</DialogTitle>
                 <DialogDescription>
@@ -953,7 +952,7 @@ const TetrisGame = () => {
                   className="bg-gray-500"
                   onClick={() => {
                     setDialog(false);
-                    navigate(`/games/leaderboard?${params.toString()}`);
+                    navigate(leaderboardUrl);
                   }}
                 >
                   {t("common.yesLeave")}
@@ -962,7 +961,7 @@ const TetrisGame = () => {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
+      </section>
     </Layout>
   );
 };

@@ -9,6 +9,7 @@ import {
   Pause,
   Settings,
   ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,14 @@ import Layout from "../../components/Layout";
 import { useTranslation } from "react-i18next";
 import { formatNumberForDisplay } from "../../utils/numberFormatter";
 import { addUtmParams } from "@/lib/utils";
-
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import SnakeImage from "../../assets/hungry-trail.png";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import { LightButton, BlueButton, ResetButtonTopRounded } from "../../components/ui/GamesButton";
+import ExternalLinkIconImage from "../../assets/link-icon.png";
 import {
   Dialog,
   DialogContent,
@@ -67,7 +75,8 @@ const DIFFICULTY_SETTINGS = {
 };
 
 const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const navigate = useNavigate();
    const { user } = useUser();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -917,18 +926,18 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
     }
   };
 
-  const params = new URLSearchParams({
-    name: "Hungry Trail",
+  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+    name: t("games.hungryTrail.name"),
     duration: "month",
     game_type: "hungry-trail",
     top_k: "10",
     sort_order: "desc",
     score_type: "max",
-  });
+  }).toString()}`;
 
   const handleLeaderBoard = () => {
     if (gameOver || score === 0) {
-      navigate(`/games/leaderboard?${params.toString()}`);
+      navigate(leaderboardUrl);
     } else {
       setIsPaused(true);
       setDialog(true);
@@ -1001,16 +1010,18 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
     );
   };
 
+  
+
   // Render completed sentences
   const renderCompletedSentences = () => {
     if (completedSentences.length === 0) {
       return (
-        <div className="h-36 flex items-center justify-center bg-muted/30 rounded-md border border-dashed border-blue-300 dark:border-blue-700">
-          <div className="text-center animate-pulse px-4">
-            <p className="text-sm font-semibold text-blue-600 dark:text-blue-300">
+        <div className="flex items-center justify-center min-h-[120px]">
+          <div className="text-center px-4">
+            <p className="text-sm font-semibold text-muted-foreground opacity-40">
               {t("common.eatFoodToUnlockArticleHeadlines")}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1 opacity-40">
               {t("common.completeEachHeadlineToEarnPointsStayHungry")}
             </p>
           </div>
@@ -1018,8 +1029,8 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
       );
     }
     return (
-      <div className="space-y-3">
-        <div className="space-y-3 h-36 overflow-y-auto custom-scrollbar">
+      <div className="h-full">
+        <div className="h-full overflow-y-auto custom-scrollbar">
           {completedSentences.map((sentenceIndex) => {
             const sentence = gameData[sentenceIndex];
             if (!sentence) return null;
@@ -1028,13 +1039,14 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
               <div
                 key={sentenceIndex}
                 onClick={() => handleArticleClick(sentence.article_detail.link)}
-                className="p-3 border border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 hover:shadow-md transition-shadow rounded-lg cursor-pointer group shadow-sm"
+                className="p-3 cursor-pointer group border-b border-border"
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 relative">
+                  <img src={ExternalLinkIconImage} alt="Link" className="w-[20px] h-[20px] object-cover rounded-[8px] flex-shrink-0 absolute top-[-10px] right-[-10px]" />
                   <img
                     src={sentence?.article_detail?.image_url}
                     alt={t("accessibility.articleThumbnail")}
-                    className="w-16 h-12 object-cover rounded-md flex-shrink-0"
+                    className="w-16 h-12 object-cover rounded-[8px] flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src =
@@ -1042,18 +1054,9 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-purple-900 dark:text-gray-300 line-clamp-2 mb-1">
+                    <p className="text-sm font-semibold text-black dark:text-gray-300 line-clamp-2 mb-1">
                       {sentence.data.headline}
                     </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-purple-600">
-                        {t("common.clickToReadArticle")}
-                      </span>
-                      <ExternalLink
-                        size={14}
-                        className="text-purple-600 group-hover:text-purple-800 flex-shrink-0"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1066,274 +1069,275 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
 
   return (
     <Layout>
-
-       {showCelebration && (
-        <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
-          <div className="absolute inset-0 celebration-container">
-            {/* Confetti particles with staggered timing */}
-            {[...Array(30)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute confetti-card"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: '-20px',
-                  animationDelay: `${Math.random() * 1.5}s`,
-                  animationDuration: `${3 + Math.random() * 2}s`,
-                }}
-              >
-                <div
-                  className="w-4 h-6 rounded-sm shadow-lg transform rotate-45"
-                  style={{
-                    backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#fdcb6e', '#6c5ce7'][Math.floor(Math.random() * 8)]
-                  }}
-                />
-              </div>
-            ))}
-
-            {/* Celebration text overlay */}
-
-          </div>
-        </div>
-      )}
-    <div className="game-area">
-      <div className="game-container">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h1 className="text-2xl md:text-3xl font-bold">{t("games.hungryTrail.name")}</h1>
-            {!user?.isAnonymous && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleLeaderBoard}
-                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-                    aria-label={t("accessibility.leaderboard")}
+      <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
+        <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+          {showCelebration && (
+            <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+              <div className="absolute inset-0 celebration-container">
+                {/* Confetti particles with staggered timing */}
+                {[...Array(30)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute confetti-card"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: '-20px',
+                      animationDelay: `${Math.random() * 1.5}s`,
+                      animationDuration: `${3 + Math.random() * 2}s`,
+                    }}
                   >
-                    <Trophy size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("common.leaderboard")}</TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col lg:flex-row w-full gap-4">
-          <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full lg:w-[60%]">
-            <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  {t("common.score")}: {formatNumberForDisplay(score)}
-                </Button>
-                {isMobile && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsPaused(!isPaused)}
-                  >
-                    {isPaused ? t("common.resume") : t("common.pause")}
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => setShowDifficultyDialog(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Settings size={16} />
-                  {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowInstructions(true)}
-                  className="bg-muted flex items-center gap-2"
-                >
-                  <HelpCircle className="mr-1 h-4 w-4" /> {t("common.help")}
-                </Button>
+                    <div
+                      className="w-4 h-6 rounded-sm shadow-lg transform rotate-45"
+                      style={{
+                        backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#fdcb6e', '#6c5ce7'][Math.floor(Math.random() * 8)]
+                      }}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="bg-muted/50 p-2">{renderCurrentSentence()}</div>
-            <div className="p-4">
-              <div
-                className="flex justify-center mb-3 relative"
-                style={{ touchAction: "none" }}
-              >
-                <canvas
-                  ref={canvasRef}
-                  width={GRID_SIZE * CELL_SIZE}
-                  height={GRID_SIZE * CELL_SIZE}
-                  className="border border-border rounded-md bg-card shadow-lg cursor-pointer"
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                  onClick={() => {
-                    if (direction === null && !gameOver) {
-                      startGame();
-                    }
-                  }}
-                />
-              {direction === null && !gameOver && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
-                  <div className="w-full max-w-sm bg-background/80 backdrop-blur-md border border-border rounded-xl shadow-xl p-5 text-center space-y-4">
-                    <div className="mx-auto w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <Play className="text-green-600" size={26} />
+          )}
+
+          <div className="game-container3" translate="no">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+              {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                {/* Header Section */}
+                <div className="mb-6" translate="no">
+                  <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                    <div className="flex items-center gap-2">
+                      <img src={SnakeImage} alt="Snake Logo" className="w-20 h-20" />
+                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.hungryTrail.name")}</h2>
                     </div>
-                    <h3 className="text-xl font-semibold">{t("common.readyToPlay")}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {isMobile ? (
-                        <>{t("games.hungryTrail.touchTheGreenButtonToStart")} {t("games.hungryTrail.swipeToMoveTheSnake")}</>
-                      ) : (
-                        <>{t("common.pressTheStartButtonBelow")}</>
+                    <div className="flex items-center gap-4">
+                      {/* Leaderboard Button */}
+                      {!user?.isAnonymous && (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
                       )}
-                    </p>
-                    <div className="flex flex-col items-center gap-2">
-                      <Button
-                        onClick={startGame}
-                        className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6"
-                      >
-                        {t("common.startGame")}
-                      </Button>
-                      <span className="text-xs text-muted-foreground">
-                        {t("games.hungryTrail.eatFoodAvoidWallsAndYourself")}
-                      </span>
+                      {/* Back to Home Button */}
+                      <BackToHome text={t("common.backToHome")} />
                     </div>
                   </div>
                 </div>
-              )}
+
+                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Difficulty Button */}
+                      <BlueButton onClick={() => setShowDifficultyDialog(true)}>
+                        <Settings className="h-4 w-4" />
+                        {t(`games.hungryTrail.${difficulty}`)}
+                      </BlueButton>
+                      {/* Help Button */}
+                      <LightButton onClick={() => setShowInstructions(true)}>
+                        <HelpCircle className="h-4 w-4" />
+                        {t("common.help")}
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Score Button */}
+                      <LightButton>
+                        {t("common.score")}: {formatNumberForDisplay(score)}
+                      </LightButton>
+                      {/* Pause Button (Mobile only) */}
+                      {isMobile && (
+                        <LightButton onClick={() => setIsPaused(!isPaused)}>
+                          {isPaused ? t("common.resume") : t("common.pause")}
+                        </LightButton>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full min-h-0">
+
+                    <div className="col-span-1">
+                      {/* Word Progress Card - Fixed Height */}
+                      <div className="h-full min-h-0 flex flex-col p-8">
+                        <div className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="font-[700] text-[18px] leading-[100%] text-center align-middle">
+                              {t("common.youHaveUnlocked")} {score} {score === 1 ? t("common.story") : t("common.stories")}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col">
+                          <div className="h-full min-h-0 flex-1 space-y-4 overflow-hidden">
+                            {renderCompletedSentences()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`col-span-1 border-border ${isArabic ? 'border-r' : 'border-l'}`}>  
+                      <div className="bg-muted/50 p-2">{renderCurrentSentence()}</div>
+                      
+                      <div className="pt-4">
+                        <div
+                          className="flex justify-center mb-3 relative"
+                          style={{ touchAction: "none" }}
+                        >
+                          <canvas
+                            ref={canvasRef}
+                            width={GRID_SIZE * CELL_SIZE}
+                            height={GRID_SIZE * CELL_SIZE}
+                            className="border bg-card shadow-lg cursor-pointer"
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                            onClick={() => {
+                              if (direction === null && !gameOver) {
+                                startGame();
+                              }
+                            }}
+                          />
+                          {direction === null && !gameOver && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
+                              <div className="w-full max-w-sm bg-background/80 backdrop-blur-md border border-border rounded-xl shadow-xl p-5 text-center space-y-4">
+                                <div className="mx-auto w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center">
+                                  <Play className="text-green-600" size={26} />
+                                </div>
+                                <h3 className="text-xl font-semibold">{t("common.readyToPlay")}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {isMobile ? (
+                                    <>{t("games.hungryTrail.touchTheGreenButtonToStart")} {t("games.hungryTrail.swipeToMoveTheSnake")}</>
+                                  ) : (
+                                    <>{t("common.pressTheStartButtonBelow")}</>
+                                  )}
+                                </p>
+                                <div className="flex flex-col items-center gap-2">
+                                  <Button
+                                    onClick={startGame}
+                                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6"
+                                  >
+                                    {t("common.startGame")}
+                                  </Button>
+                                  <span className="text-xs text-muted-foreground">
+                                    {t("games.hungryTrail.eatFoodAvoidWallsAndYourself")}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {gameOver && (
+                          <div className="text-center">
+                            <ResetButtonTopRounded onClick={resetGame} >
+                              {t("common.playAgain")}
+                              <RefreshCw className="h-4 w-4" />
+                            </ResetButtonTopRounded>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {gameOver && (
-                <div className="text-center">
-                  <button
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-4 py-2 rounded-lg transition-colors text-md"
-                    onClick={resetGame}
-                  >
-                    {t("common.playAgain")}
-                  </button>
-                </div>
-              )}
+              {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1 space-y-4">
+                <HowToPlayInstruction 
+                  title={t("common.howToPlay")}
+                  text=""
+                >
+                  <div className="text-[16px] space-y-3 text-white">
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>
+                        {isMobile ? (
+                          <>{t("games.hungryTrail.touchTheGameAreaOrSwipeToStartTheGame")}</>
+                        ) : (
+                          <>
+                            Press any{" "}
+                            <span className="font-semibold">{t("games.hungryTrail.arrowKeys")}</span> {t("games.hungryTrail.or")}{" "}
+                            <span className="font-semibold">{t("games.hungryTrail.space")}</span> {t("games.hungryTrail.toStart")}.
+                          </>
+                        )}
+                      </li>
+                      <li>
+                        {isMobile ? (
+                          <>{t("games.hungryTrail.swipeInTheDirectionYouWantTheSnakeToMove")}</>
+                        ) : (
+                          <>
+                            {t("games.hungryTrail.arrowKeysDescription")}
+                            <span className="font-semibold">{t("games.hungryTrail.arrowKeys")}</span> {t("games.hungryTrail.or")}{" "}
+                            <span className="font-semibold">{t("games.hungryTrail.space")}</span> {t("games.hungryTrail.toStart")}.
+                          </>
+                        )}
+                      </li>
+                      <li>
+                        <span className="font-semibold">{t("games.hungryTrail.newFeature")}</span> 
+                        {" "}{t("games.hungryTrail.eachFoodEatenUnlocksAWordFromNewsHeadlines")}
+                      </li>
+                      <li>
+                        <span className="font-semibold">{t("games.hungryTrail.scoringSystem")}</span>{" "}
+                        {t("games.hungryTrail.completeFullHeadlinesToEarnPoints")} ({t("games.hungryTrail.onePointPerArticle")}).
+                      </li>
+                      <li>
+                        {t("games.hungryTrail.completeSentencesToUnlockClickableArticlesWithImages")}
+                      </li>
+                      <li>
+                        {t("games.hungryTrail.chooseDifficulty")}
+                      </li>
+                      <li>{t("games.hungryTrail.avoidHittingWallsOrYourselfGameEndsIfYouDo")}</li>
+                      <li>
+                        {!isMobile && (
+                          <>
+                            {t("games.hungryTrail.press")} <span className="font-semibold">{t("games.hungryTrail.space")}</span> to {t("games.hungryTrail.pauseResume")}.
+                          </>
+                        )}
+                        {isMobile && (
+                          <>
+                            {t("games.hungryTrail.clickTo")} {" "}
+                            <span className="font-semibold">{t("games.hungryTrail.pauseResume")} </span>
+                            {t("games.hungryTrail.buttonToPauseResume")}.
+                          </>
+                        )}
+                      </li>
+                    </ul>
+                  </div>
+                </HowToPlayInstruction>
+                <MostReadSidebar />
+              </div>
             </div>
           </div>
-
-          <div className="w-full lg:w-[40%] space-y-4">
-            {/* Word Progress Card - Fixed Height */}
-            <Card className="h-60">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg leading-none">
-                    {t("common.youHaveUnlocked")} {formatNumberForDisplay(score)} {score === 1 ? t("common.story") : t("common.stories")}
-                  </CardTitle>
-                </div>
-              </CardHeader>
-
-              <CardContent className=" overflow-hidden flex flex-col">
-                <div className="flex-1 space-y-4 overflow-y-auto">
-                  {renderCompletedSentences()}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Instructions Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t("common.howToPlay")}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm space-y-2">
-                <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                  <li>
-                    {isMobile ? (
-                      <>{t("games.hungryTrail.touchTheGameAreaOrSwipeToStartTheGame")}</>
-                    ) : (
-                      <>
-                        Press any{" "}
-                        <span className="font-semibold">{t("games.hungryTrail.arrowKeys")}</span> {t("games.hungryTrail.or")}{" "}
-                        <span className="font-semibold">{t("games.hungryTrail.space")}</span> {t("games.hungryTrail.toStart")}.
-                      </>
-                    )}
-                  </li>
-                  <li>
-                    {isMobile ? (
-                      <>{t("games.hungryTrail.swipeInTheDirectionYouWantTheSnakeToMove")}</>
-                    ) : (
-                      <>
-                        {t("games.hungryTrail.arrowKeysDescription")}
-                        <span className="font-semibold">{t("games.hungryTrail.arrowKeys")}</span> {t("games.hungryTrail.or")}{" "}
-                        <span className="font-semibold">{t("games.hungryTrail.space")}</span> {t("games.hungryTrail.toStart")}.
-                      </>
-                    )}
-                  </li>
-                  <li>
-                    <span className="font-semibold text-primary">{t("games.hungryTrail.newFeature")}</span> 
-                    {t("games.hungryTrail.eachFoodEatenUnlocksAWordFromNewsHeadlines")}
-                  </li>
-                  <li>
-                    <span className="font-semibold text-primary">{t("games.hungryTrail.scoringSystem")}</span>{" "}
-                    {t("games.hungryTrail.completeFullHeadlinesToEarnPoints")} ({t("games.hungryTrail.onePointPerArticle")}).
-                  </li>
-                  <li>
-                    {t("games.hungryTrail.completeSentencesToUnlockClickableArticlesWithImages")}
-                  </li>
-                  <li>
-                    {t("games.hungryTrail.chooseDifficulty")}
-                  </li>
-                  <li>{t("games.hungryTrail.avoidHittingWallsOrYourselfGameEndsIfYouDo")}</li>
-                  <li>
-                    {!isMobile && (
-                      <>
-                        {t("games.hungryTrail.press")} <span className="font-semibold">{t("games.hungryTrail.space")}</span> to {t("games.hungryTrail.pauseResume")}.
-                      </>
-                    )}
-                    {isMobile && (
-                      <>
-                        {t("games.hungryTrail.clickTo")} {" "}
-                        <span className="font-semibold">{t("games.hungryTrail.pauseResume")} </span>
-                        {t("games.hungryTrail.buttonToPauseResume")}.
-                      </>
-                    )}
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
         </div>
-      </div>
 
-      {/* All Articles Completed Dialog */}
-      <Dialog
-        open={showAllCompletedDialog}
-        onOpenChange={() => {}} // Prevent closing by clicking outside
-      >
-        <DialogContent>
-          <DialogHeader>
+        {/* All Articles Completed Dialog */}
+        <Dialog
+          open={showAllCompletedDialog}
+          onOpenChange={() => {}} // Prevent closing by clicking outside
+        >
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
+            <DialogHeader>
             <DialogTitle>🎉 {t("common.allArticlesUnlocked")}</DialogTitle>
             <DialogDescription>
               {t("common.congratulationsYouHaveSuccessfullyUnlockedAllAvailableArticles")}
             </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button onClick={handleContinueGame} className="bg-green-600 hover:bg-green-700">
-              {t("common.continuePlaying")}
-            </Button>
-            <Button
-              onClick={handleQuitGame}
-              variant="outline"
-              className="border-red-500 text-red-500 hover:bg-red-50"
-            >
-              {t("common.quitGame")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </DialogHeader>
+            <DialogFooter className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={handleContinueGame} className="bg-green-600 hover:bg-green-700">
+                {t("common.continuePlaying")}
+              </Button>
+              <Button
+                onClick={handleQuitGame}
+                variant="outline"
+                className="border-red-500 text-red-500 hover:bg-red-50"
+              >
+                {t("common.quitGame")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* Difficulty Selection Dialog */}
-      <Dialog
-        open={showDifficultyDialog}
-        onOpenChange={setShowDifficultyDialog}
-      >
-        <DialogContent>
+        {/* Difficulty Selection Dialog */}
+        <Dialog
+          open={showDifficultyDialog}
+          onOpenChange={setShowDifficultyDialog}
+        >
+        <DialogContent dir={isArabic ? "rtl" : "ltr"}>
           <DialogHeader>
             <DialogTitle>{t("common.selectDifficultyLevel")}</DialogTitle>
             <DialogDescription>
@@ -1350,7 +1354,7 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
               >
                 <div className="text-left">
                   <div className={`font-semibold ${difficulty === level ? 'text-primary-foreground' : 'text-foreground'}`}>
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                    <strong>{t(`games.hungryTrail.${level}`)}: </strong>
                   </div>
                   <div className={`${difficulty === level ? 'text-primary-foreground/90' : 'text-foreground/90'} text-sm`}>
                     {t("common.speed")}:{" "}
@@ -1367,9 +1371,9 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Instructions Dialog */}
-      <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-        <DialogContent>
+        {/* Instructions Dialog */}
+        <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
           <DialogHeader>
             <DialogTitle>{t("common.howToPlayHungryTrailGame")}</DialogTitle>
             <DialogDescription>
@@ -1414,13 +1418,13 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
                   <li>{t("games.hungryTrail.chooseFromThreeDifficultyLevels")}</li>
                   <ul className="list-disc pl-5 mt-2">
                     <li>
-                      <strong>{t("games.hungryTrail.easy")}</strong> {t("games.hungryTrail.slowerSpeedGoodForBeginners")}
+                      <strong>{t("games.hungryTrail.easy")}: </strong> {t("games.hungryTrail.slowerSpeedGoodForBeginners")}
                     </li>
                     <li>
-                      <strong>{t("games.hungryTrail.medium")}</strong> {t("games.hungryTrail.normalSpeedBalancedGameplay")}
+                      <strong>{t("games.hungryTrail.medium")}: </strong> {t("games.hungryTrail.normalSpeedBalancedGameplay")}
                     </li>
                     <li>
-                      <strong>{t("games.hungryTrail.hard")}</strong> {t("games.hungryTrail.fastSpeedChallengingExperience")}
+                      <strong>{t("games.hungryTrail.hard")}: </strong> {t("games.hungryTrail.fastSpeedChallengingExperience")}
                     </li>
                   </ul>
                   <li>{t("games.hungryTrail.avoidHittingWallsOrYourselfGameEndsIfYouDo")}</li>
@@ -1452,9 +1456,9 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Leave Game Dialog */}
-      <Dialog open={dialog} onOpenChange={setDialog}>
-        <DialogContent>
+        {/* Leave Game Dialog */}
+        <Dialog open={dialog} onOpenChange={setDialog}>
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
           <DialogHeader>
             <DialogTitle>{t("common.leaveGame")}</DialogTitle>
             <DialogDescription>
@@ -1471,7 +1475,7 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
               className="bg-gray-500"
               onClick={() => {
                 setDialog(false);
-                navigate(`/games/leaderboard?${params.toString()}`);
+                navigate(leaderboardUrl);
               }}
             >
               {t("common.yesLeave")}
@@ -1479,7 +1483,8 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    
+      </section>
     </Layout>
   );
 };

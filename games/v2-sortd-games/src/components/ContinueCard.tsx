@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Play, Clock, Trophy } from "lucide-react";
 import { useNavigate , useSearchParams } from "react-router-dom";
 import type { UseEmblaCarouselType } from "embla-carousel-react";
@@ -12,14 +12,15 @@ import {
 } from "@/components/ui/carousel";
 import { sendCustomEvent } from "../analytics/ga";
 import { addGameToContinue } from "./ContinueGamesUtils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import GamesServices from "../../v2-services/games-service";
 import { useTranslation } from "react-i18next";
 
 interface ContinueGameData {
   id: string;
-  title: string;
-  description?: string;
+  title?: string; // Optional: fallback if titleKey is not available
+  description?: string; // Optional: fallback if descriptionKey is not available
+  titleKey?: string; // Translation key for title (e.g., "games.xox.name")
+  descriptionKey?: string; // Translation key for description (e.g., "games.xox.description")
   imageUrl?: string;
   gameType: "dynamic" | "static";
   lastPlayed: string;
@@ -35,13 +36,15 @@ interface ContinueSectionProps {
 }
 
 const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [continueGames, setContinueGames] = useState<ContinueGameData[]>([]);
   const [searchParams] = useSearchParams();
   const game_id = searchParams.get('id');
   const [showScrollArrows, setShowScrollArrows] = useState(false);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
+  const [slidesToScroll, setSlidesToScroll] = useState<1 | "auto">(1);
 
   const { user } = useUser();
   const navigate = useNavigate();
@@ -55,10 +58,10 @@ const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
   // Function to calculate how many items can fit in the viewport
   const getItemsPerView = () => {
     const width = window.innerWidth;
-    if (width >= 1280) return 5; // xl: basis-1/5
+    if (width >= 1280) return 4; // xl: basis-1/5
     if (width >= 1024) return 4; // lg: basis-1/4
     if (width >= 640) return 3;  // sm: basis-1/3
-    return 2; // basis-1/2
+    return 1; // mobile: basis-full (1 item)
   };
 
   // Check if scrolling is needed
@@ -75,6 +78,16 @@ const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
     setCanScrollPrev(emblaApi.canScrollPrev());
     setCanScrollNext(emblaApi.canScrollNext());
   };
+
+  useEffect(() => {
+    const update = () => {
+      setSlidesToScroll(window.innerWidth < 640 ? 1 : "auto");
+    };
+  
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   useEffect(() => {
     const loadContinueGames = async () => {
@@ -134,17 +147,44 @@ const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
     loadContinueGames();
   }, [user]);
 
+  // Helper function to get translated title
+  const getTranslatedTitle = (game: ContinueGameData): string => {
+    if (game.titleKey) {
+      return t(game.titleKey);
+    }
+    return game.title || t('common.continuePlaying');
+  };
+  
+  // Helper function to get translated description
+  const getTranslatedDescription = (game: ContinueGameData): string => {
+    if (game.descriptionKey) {
+      return t(game.descriptionKey);
+    }
+    return game.description || '';
+  };
+
+  // Filter out games with missing required data
+  const validGames = useMemo(() => {
+    return continueGames.filter((game) => {
+      return game && game.id && (game.title || game.titleKey) && game.lastPlayed;
+    });
+  }, [continueGames]);
+
   // Check scroll needed when games change or window resizes
   useEffect(() => {
-    checkScrollNeeded();
+    const itemsPerView = getItemsPerView();
+    const needsScroll = validGames.length > itemsPerView;
+    setShowScrollArrows(needsScroll);
     
     const handleResize = () => {
-      checkScrollNeeded();
+      const itemsPerView = getItemsPerView();
+      const needsScroll = validGames.length > itemsPerView;
+      setShowScrollArrows(needsScroll);
     };
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [continueGames]);
+  }, [validGames.length]);
 
   useEffect(() => {
     if (!emblaApi) {
@@ -156,7 +196,8 @@ const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
     emblaApi.on('select', updateScrollButtons);
     emblaApi.on('reInit', updateScrollButtons);
 
-    const canAutoplay = continueGames.length > 1;
+    // Use valid games count for autoplay
+    const canAutoplay = validGames.length > 1;
 
     const playAutoplay = () => {
       if (canAutoplay && showScrollArrows) {
@@ -205,6 +246,11 @@ const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
       playAutoplay();
     }
 
+    const getSlidesToScroll = () => {
+      const width = window.innerWidth;
+      return width < 640 ? 1 : "auto";
+    };
+    
     emblaApi.on("pointerDown", handleInteraction);
     emblaApi.on("select", handleInteraction); 
     emblaApi.rootNode().addEventListener("mouseenter", handleMouseEnter);
@@ -275,8 +321,8 @@ const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
     return daysAgo === 1 ? t('common.oneDayAgo') : t('common.daysAgo', { count: daysAgo });
   };
 
-  // Don't show continue section for anonymous users
-  if (!user || user.isAnonymous || continueGames.length === 0) return null;
+  // Don't show continue section for anonymous users or if no valid games
+  if (!user || user.isAnonymous || validGames.length === 0) return null;
 
   return (
     <div className="mb-8">
@@ -288,10 +334,10 @@ const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
         <Carousel
           opts={{
             align: "start",
-            loop: continueGames.length > 1 && showScrollArrows,
+            loop: validGames.length > 1 && showScrollArrows,
             dragFree: true,
             containScroll: "trimSnaps",
-            slidesToScroll: "auto",
+            slidesToScroll: slidesToScroll,
             duration: 25,
           }}
           setApi={setEmblaApi} 
@@ -316,64 +362,95 @@ const ContinueSection: React.FC<ContinueSectionProps> = ({ search }) => {
           )}
 
           <CarouselContent className="-ml-2 md:-ml-4">
-            {continueGames.map((game) => (
+            {validGames.map((game) => (
               <CarouselItem
                 key={`${game.id}-${game.lastPlayed}`}
-                className="pl-2 md:pl-4 basis-1/2 sm:basis-1/3 lg:basis-1/4 xl:basis-1/5"
+                className="pl-2 md:pl-4 basis-full sm:basis-1/3 lg:basis-1/4 xl:basis-1/4"
               >
                 <div
-                  className="relative h-48 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:scale-105 hover:shadow-2xl border-2 border-primary/20"
+                  className="game-card bg-white dark:bg-gray-800 border border-[#E8E8E8] flex flex-col h-full cursor-pointer group transition-all duration-300 hover:shadow-md"
                   onClick={() => handleGameClick(game)}
                 >
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
-                    style={{ backgroundImage: `url(${game.imageUrl})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-                  <div className="relative h-full flex flex-col justify-between p-4">
-                    {game.progress && (
-                      <div className="flex justify-end">
-                        <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1">
-                          {game.progress.score !== undefined && (
-                            <div className="flex items-center gap-1 text-white text-xs">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span aria-label="Leaderboard">
-                                    <Trophy size={12} />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Leaderboard</TooltipContent>
-                              </Tooltip>
-                              {game.progress.score}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex flex-col justify-between gap-4 h-full">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white/20 bg-black/20 backdrop-blur-sm flex-shrink-0">
-                        <div
-                          className="w-full h-full bg-cover bg-center"
-                          style={{ backgroundImage: `url(${game.imageUrl})` }}
+                  {/* Game Title and Image Row with Gray Background */}
+                  <div className="bg-[#E5E5E5] dark:bg-[#000000] p-4 pb-0 flex items-center gap-4 min-h-[120px]">
+                    {/* Game Image */}
+                    <div className="w-24 h-24 flex-shrink-0 bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden p-[15px] rounded-t-[20px] rounded-b-none relative top-[15px]">
+                      {game.imageUrl ? (
+                        <img
+                          src={game.imageUrl}
+                          alt={game.title || 'Game'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            // Show placeholder if image fails
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = '<div class="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-500 text-xs">No Image</div>';
+                            }
+                          }}
                         />
-                      </div>
-                      <div>
-                        <h3 className="text-white text-lg font-bold tracking-wide drop-shadow-lg">
-                          {game.title}
-                        </h3>
-                        <div className="flex items-center gap-1 text-white/80 text-xs mt--1">
-                          <Clock size={12} />
-                          {formatLastPlayed(game.lastPlayed)}
+                      ) : (
+                        <div className="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs">
+                          {game.title?.charAt(0).toUpperCase() || '?'}
                         </div>
-                      </div>
+                      )}
+                    </div>
+                    
+                    {/* Game Title */}
+                    <h2 className="text-[24px] font-black text-gray-900 dark:text-white flex-1 line-clamp-2">
+                      {getTranslatedTitle(game)}
+                    </h2>
+                  </div>
+
+                  {/* Game Description with Last Played */}
+                  <div className="p-4 flex-1">
+                    {/* <p className="text-[15px] leading-[25px] font-semibold text-gray-700 dark:text-gray-300 line-clamp-2 mb-2">
+                      {game.description || t('common.continuePlaying')}
+                    </p> */}
+                    {/* Last Played Time */}
+                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-xs">
+                      <Clock size={12} />
+                      <span>{formatLastPlayed(game.lastPlayed)}</span>
+                      {game.progress?.score !== undefined && (
+                        <>
+                          <span className="mx-1">•</span>
+                          <div className="flex items-center gap-1">
+                            <Trophy size={12} />
+                            <span>{game.progress.score}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
-                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                        <div className="w-0 h-0 border-l-[6px] border-l-black border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent ml-1"></div>
+
+                  {/* Play Now Button */}
+                  <div className={`${isRTL ? 'pl-8' : 'pr-8'} pt-0 pb-0 flex justify-end`}>
+                    <button
+                      className="bg-black dark:bg-gray-900 text-white py-2.5 px-4 rounded-t-sm rounded-b-none text-sm font-medium flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGameClick(game);
+                      }}
+                    >
+                      <span className="text-sm font-bold font-[700]">{t("common.playNow")}</span>
+                      <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center font-bold font-[700]">
+                        <svg
+                          className={`w-3 h-3 text-white flex-shrink-0 ${isRTL ? '' : 'rotate-180'}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
                       </div>
-                    </div>
+                    </button>
                   </div>
                 </div>
               </CarouselItem>

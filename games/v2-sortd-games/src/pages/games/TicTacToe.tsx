@@ -14,9 +14,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Info, HelpCircle, Computer, Users } from "lucide-react";
+import { Info, HelpCircle, Computer, Users, RefreshCw } from "lucide-react";
 import { set } from "date-fns";
 import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import TicTacToeImage from "../../assets/xox.png";
+import BackToHome from "../../components/ui/BackToHome";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import { LightButton, BlueButton, ResetButtonTopRounded } from "../../components/ui/GamesButton";
+import VSIcon from "../../assets/vs.png";
+import HumanIcon from "../../components/ui/HumanIcon";
+import ComputerIcon from "../../components/ui/ComputerIcon";
 
 type Player = "X" | "O";
 type Cell = Player | null;
@@ -24,7 +33,8 @@ type Board = Cell[];
 type GameMode = "human-vs-computer" | "human-vs-human";
 
 const TicTacToe = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const { user } = useUser();
   const navigate = useNavigate();
   const [board, setBoard] = useState<Board>(Array(9).fill(null));
@@ -43,13 +53,13 @@ const TicTacToe = () => {
     ? `${window.location.protocol}//${window.location.host}` 
     : "https://asharqgames-uat.sortd.pro";
   const gameUrl = `${baseUrl}${location.pathname}${location.search ? location.search : ""}`;
-  const gameName = "Tic Tac Toe";
+  const gameName = t("games.xox.name");
   
   useGameSchema(
     {
       name: gameName,
-      headline: `${gameName} - Asharq Games`,
-      description: "Play Tic Tac Toe against the computer or a friend. Test your strategic skills!",
+      headline: `${gameName} - ${t("common.asharqGames")}`,
+      description: `${t("games.xox.description")}`,
       url: gameUrl,
       image: `${baseUrl}/assets/tic-tac-toe.jpg`,
       isAccessibleForFree: true,
@@ -158,18 +168,18 @@ const TicTacToe = () => {
       let className = "";
 
       if (gameMode === "human-vs-computer") {
-        title = `${newWinner} Wins! 🎉`;
+        title = `${t("games.xox.newWinner", { newWinner: newWinner })}`;
         description =
           newWinner === "X"
-            ? "You won! Great job!"
-            : "Opponent wins this round!";
+            ? `${t("games.xox.congratulations", { player: "X" })}`
+            : `${t("games.xox.congratulations", { player: "O" })}`;
         className =
           newWinner === "X"
             ? "bg-green-600 text-white font-semibold border-none shadow-xl"
             : "bg-red-600 text-white font-semibold border-none shadow-xl";
       } else {
-        title = `Player ${newWinner} Wins! 🎉`;
-        description = `Congratulations Player ${newWinner}!`;
+        title = `${t("games.xox.newWinner", { newWinner: newWinner })}`;
+        description = `${t("games.xox.congratulations", { player: newWinner })}`;
         className =
           newWinner === "X"
             ? "bg-green-600 text-white font-semibold border-none shadow-xl"
@@ -188,8 +198,8 @@ const TicTacToe = () => {
     if (!newBoard.includes(null)) {
       setWinner("Draw");
       toast({
-        title: "It's a Draw! 🤝",
-        description: "The game ended in a tie.",
+        title: `${t("common.itsADraw")}`,
+        description: `${t("common.theGameEndedInATie")}`,
         className:
           "bg-yellow-500 text-black font-semibold border-none shadow-xl",
         duration: 5000,
@@ -216,8 +226,8 @@ const TicTacToe = () => {
         setWinner(newWinner);
         setWinningLine(line);
         toast({
-          title: `${newWinner} Wins! 🎉`,
-          description: "Opponent wins this round!",
+          title: `${t("games.xox.newWinner", { newWinner: newWinner })}`,
+          description: newWinner === "X" ? `${t("games.xox.congratulations", { player: "X" })}` : `${t("games.xox.congratulations", { player: "O" })}`,
           className:
             "bg-red-600 text-white font-semibold border-none shadow-xl",
           duration: 5000,
@@ -267,10 +277,10 @@ const TicTacToe = () => {
 
   const getCellClass = (index: number) => {
     let className =
-      "aspect-square w-full flex items-center justify-center text-xl sm:text-md font-bold transition-all border border-neutral-400 dark:border-neutral-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800";
+      "aspect-square w-full flex items-center justify-center text-4xl font-bold transition-all border border-neutral-400 dark:border-neutral-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800";
 
     if (winningLine && winningLine.includes(index)) {
-      className += " bg-primary/20 text-primary animate-pulse";
+      className += " bg-[#C0E5C3] animate-pulse border-[#C0E5C3]";
     }
 
     if (
@@ -352,145 +362,166 @@ const TicTacToe = () => {
 
   return (
     <Layout>
-      <div className="game-area">
-        <div className="game-container">
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h1 className="text-2xl md:text-3xl font-bold ">{t("games.xox.name")}</h1>
-            </div>
-          </div>
+      <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
+        <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+          <div className="game-container3" translate="no">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+              {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                {/* Header Section */}
+                <div className="mb-6" translate="no">
+                  <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                    <div className="flex items-center gap-2">
+                      <img src={TicTacToeImage} alt="TicTacToe Logo" className="w-20 h-20" />
+                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.xox.name")}</h2>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Back to Home Button */}
+                      <BackToHome text={t("common.backToHome")} />
+                    </div>
+                  </div>
+                </div>
 
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="bg-card border border-border  rounded-lg shadow-lg overflow-hidden w-full md:w-[70%] pb-2 ">
-              <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-                <div className="flex items-center gap-2">
-                  {!winner && (
-                    <Button variant="outline" size="sm">
-                      {getCurrentPlayerDisplay()}
-                    </Button>
+                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Help Button */}
+                      <LightButton onClick={() => setShowInstructions(true)}>
+                        {t("common.help")}
+                        <HelpCircle className="h-4 w-4" />
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Turn Indicator */}
+                      {!winner && (
+                        <LightButton>
+                          {getCurrentPlayerDisplay()}
+                        </LightButton>
+                      )}
+                      {/* Game Mode Button */}
+                      <LightButton onClick={changeGameMode}>
+                        {gameMode === "human-vs-computer"
+                          ? t("common.vsComputer")
+                          : t("common.vsHuman")}
+                          {gameMode === "human-vs-computer" ? (
+                            <ComputerIcon classes="h-[24px] w-[24px]" />
+                          ) : (
+                            <HumanIcon classes="h-[24px] w-[24px]" />
+                          )}
+                      </LightButton>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 aspect-square max-w-xs mx-auto my-5">
+                    {board.map((cell, index) => (
+                      <button
+                        key={index}
+                        className={getCellClass(index)}
+                        onClick={() => handleClick(index)}
+                        disabled={
+                          !!cell ||
+                          !!winner ||
+                          (gameMode === "human-vs-computer" && !isXNext)
+                        }
+                      >
+                        {cell}
+                      </button>
+                    ))}
+                  </div>
+
+                  {winner && (
+                    <div className="text-center mb-4 ">
+                      <h2 className="text-xl font-bold mb-2">
+                        {getWinnerDisplay()}
+                      </h2>
+                    </div>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={changeGameMode}
-                    className="flex items-center gap-2"
-                  >
-                    {gameMode === "human-vs-computer" ? (
-                      <Computer className="h-4 w-4" />
-                    ) : (
-                      <Users className="h-4 w-4" />
-                    )}
-                    {gameMode === "human-vs-computer"
-                      ? t("common.vsComputer")
-                      : t("common.vsHuman")}
-                  </Button>
+
+                  <div className="flex justify-center">
+                    <ResetButtonTopRounded onClick={resetGame}>
+                      {t("common.newGame")}
+                      <RefreshCw className="h-4 w-4" />
+                    </ResetButtonTopRounded>
+                  </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowInstructions(true)}
-                  className="bg-muted flex items-center gap-2"
+              </div>
+                {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1">
+                <HowToPlayInstruction 
+                  title={t("common.howToPlay")}
+                  text=""
                 >
-                  <HelpCircle className="mr-1 h-4 w-4" /> {t("common.help")}
-                </Button>
+                  <div className="text-[16px] space-y-3 text-white">
+                    <p className="mb-4">
+                      {gameMode === "human-vs-computer"
+                        ? t("common.youVsComputer")
+                        : t("common.playerVsPlayer")}
+                    </p>
+                    {getInstructions()}
+                  </div>
+                </HowToPlayInstruction>
+                <MostReadSidebar />
               </div>
-
-              <div className="grid grid-cols-3 gap-1 aspect-square max-w-xs mx-auto my-5">
-                {board.map((cell, index) => (
-                  <button
-                    key={index}
-                    className={getCellClass(index)}
-                    onClick={() => handleClick(index)}
-                    disabled={
-                      !!cell ||
-                      !!winner ||
-                      (gameMode === "human-vs-computer" && !isXNext)
-                    }
-                  >
-                    {cell}
-                  </button>
-                ))}
-              </div>
-
-              {winner && (
-                <div className="text-center mb-4 ">
-                  <h2 className="text-xl font-bold mb-2">
-                    {getWinnerDisplay()}
-                  </h2>
-                </div>
-              )}
-
-              <div className="flex justify-center   ">
-                <button
-                  onClick={resetGame}
-                  className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 "
-                >
-                  {t("common.newGame")}
-                </button>
-              </div>
-            </div>
-
-            <div className="w-full md:w-[30%]">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t("common.howToPlay")}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p className="text-muted-foreground mb-4">
-                    {gameMode === "human-vs-computer"
-                      ? t("common.youVsComputer")
-                      : t("common.playerVsPlayer")}
-                  </p>
-                  {getInstructions()}
-                </CardContent>
-              </Card>
             </div>
           </div>
-        </div>
 
         {/* Game Mode Selection Dialog */}
         <Dialog open={showModeSelection} onOpenChange={setShowModeSelection}>
-          <DialogContent>
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
             <DialogHeader>
               <DialogTitle>{t("common.chooseGameMode")}</DialogTitle>
               <DialogDescription>
                 {t("common.selectHowYouWantToPlay")} {t("games.xox.name")}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <Button
-                onClick={() => selectGameMode("human-vs-computer")}
-                className="w-full flex items-center gap-3 h-16 text-left justify-start"
-                variant="outline"
-              >
-                <Computer className="h-8 w-8" />
-                <div>
-                  <div className="font-semibold">{t("common.humanVsComputer")}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {t("common.playAgainstTheComputer")}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 mt-4">
+              <div className="col-span-1 border border-[#DEDEDE] hover:border-[#C62426] hover:border-2 rounded-[5px] p-4">
+                <a
+                  onClick={() => selectGameMode("human-vs-human")}
+                  className="w-full items-center gap-3 h-16 text-left justify-start cursor-pointer text-center"
+                >
+                  <div>
+                  <div className="flex items-center gap-2">
+                      <HumanIcon classes="flex items-center text-[50px]" />
+                      <img src={VSIcon} alt="Computer" className="h-[24px] w-[24px]"  />
+                      <HumanIcon classes="flex items-center text-[50px]" />
+                    </div>
+                    <div className="font-bold text-[18px]">{t("common.humanVsHuman")}</div>
+                    <div className="text-sm text-muted-foreground text-[14px] text-[#AAAAAA]">
+                      {t("common.playWithAFriend")}
+                    </div>
                   </div>
-                </div>
-              </Button>
-              <Button
-                onClick={() => selectGameMode("human-vs-human")}
-                className="w-full flex items-center gap-3 h-16 text-left justify-start"
-                variant="outline"
-              >
-                <Users className="h-8 w-8" />
-                <div>
-                  <div className="font-semibold">{t("common.humanVsHuman")}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {t("common.playWithAFriend")}
+                </a>
+              </div>
+              <div className="col-span-1 border border-[#DEDEDE] hover:border-[#C62426] hover:border-2 rounded-[5px] p-4">
+                <a
+                  onClick={() => selectGameMode("human-vs-computer")}
+                  className="w-full items-center gap-3 h-16 text-left justify-start cursor-pointer text-center"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <HumanIcon classes="flex items-center text-[50px]" />
+                      <img src={VSIcon} alt="Computer" className="h-[24px] w-[24px]"  />
+                      <ComputerIcon classes="flex items-center text-[50px]" />
+                    </div>
+                    <div className="font-bold text-[18px]">{t("common.humanVsComputer")}</div>
+                    <div className="text-sm text-muted-foreground text-[14px] text-[#AAAAAA]">
+                      {t("common.playAgainstTheComputer")}
+                    </div>
                   </div>
-                </div>
-              </Button>
+                </a>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
 
         {/* Instructions Dialog */}
         <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-          <DialogContent>
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
             <DialogHeader>
               <DialogTitle>{t("common.howToPlay")} {t("games.xox.name")}</DialogTitle>
               <DialogDescription>
@@ -502,7 +533,8 @@ const TicTacToe = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
+      </section>
     </Layout>
   );
 };

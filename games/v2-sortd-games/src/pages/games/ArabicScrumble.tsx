@@ -23,9 +23,19 @@ import {
   Trophy,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { addUtmParams } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import ScrambleArabic from "../../assets/headline-scramble.png";
+import CheckedWhiteIcon from "../../assets/checked-white.png";
+import ArrowTransparent from "../../assets/arrow-transparent.png";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
 
 declare global {
   interface Window {
@@ -88,34 +98,37 @@ const ReplayDialog: React.FC<ReplayDialogProps> = ({
   finalScore = 0,
   totalGames = 0,
 }) => {
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent dir="rtl">
+      <DialogContent dir={isArabic ? "rtl" : "ltr"}>
         <DialogHeader>
-          <DialogTitle>اللعبة انتهت!</DialogTitle>
+          <DialogTitle>{t("games.headlineScramble.gameComplete")}</DialogTitle>
           <DialogDescription>
             <div className="space-y-4 mt-4">
               <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-primary mb-2">
-                  النتيجة النهائية: {finalScore}/{totalGames}
+                  {t("games.headlineScramble.finalScore", { finalScore, total: totalGames })}
                 </div>
                 <div className="text-muted-foreground">
                   {finalScore === totalGames
-                    ? "درجة كاملة! عمل رائع!"
+                    ? t("games.headlineScramble.perfectScoreAmazingWork")
                     : finalScore > totalGames / 2
-                      ? "عمل جيد! أحسنت!"
-                      : "محاولة جيدة! حاول مرة أخرى للتحسين!"}
+                      ? t("games.headlineScramble.greatJobWellDone")
+                      : t("games.headlineScramble.goodEffortTryAgainToImprove")}
                 </div>
               </div>
-              <p className="text-center">هل تريد اللعب مرة أخرى؟</p>
+              <p className="text-center">{t("games.headlineScramble.wouldYouLikeToPlayAgain")}</p>
             </div>
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex flex-row-reverse gap-2">
+        <DialogFooter className={isArabic ? "flex flex-row-reverse gap-2" : "flex flex-row gap-2"}>
           <Button variant="outline" onClick={onClose}>
-            لا، شكراً
+            {t("games.headlineScramble.noThanks")}
           </Button>
-          <Button onClick={onConfirm}>نعم، العب مرة أخرى</Button>
+          <Button onClick={onConfirm}>{t("games.headlineScramble.yesPlayAgain")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -125,10 +138,14 @@ const ReplayDialog: React.FC<ReplayDialogProps> = ({
 const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
   console.log(gameData);
 
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const [searchParams] = useSearchParams();
   const isArticleView = searchParams.get("src") === "article";
   const { user } = useUser();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [currentGameIndex, setCurrentGameIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState<string[]>([]);
   const [availableWords, setAvailableWords] = useState<string[]>([]);
@@ -148,7 +165,25 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Game schema for SEO
+  const baseUrl = typeof window !== "undefined" 
+    ? `${window.location.protocol}//${window.location.host}` 
+    : "https://asharqgames-uat.sortd.pro";
+  const gameUrl = `${baseUrl}${location.pathname}${location.search ? location.search : ""}`;
+  const gameName = t("games.headlineScramble.name");
+  
+  useGameSchema(
+    {
+      name: gameName,
+      headline: `${gameName} - ${t("common.asharqGames")}`,
+      description: t("games.headlineScramble.description"),
+      url: gameUrl,
+      image: `${baseUrl}/assets/scramble.jpg`,
+      isAccessibleForFree: true,
+    },
+  );
 
   // Audio context ref
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -405,17 +440,27 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
   }
 
   useEffect(() => {
-    if (currentGame) {
-      const shuffleArr = shuffleArray([...currentGame.data.randomized]);
-      const shuffled = ensureShuffled([...currentGame.data.randomized], shuffleArr);
+    try {
+      if (currentGame) {
+        const shuffleArr = shuffleArray([...currentGame.data.randomized]);
+        const shuffled = ensureShuffled([...currentGame.data.randomized], shuffleArr);
 
-      setAvailableWords(shuffled);
+        setAvailableWords(shuffled);
+        setUserAnswer([]);
+        setIsCompleted(false);
+        setShowResult(false);
+        setAnswer(false);
+      }
+    } catch (error) {
+      console.error("Error initializing game:", error);
+      // Reset to safe state
+      setAvailableWords([]);
       setUserAnswer([]);
       setIsCompleted(false);
       setShowResult(false);
       setAnswer(false);
     }
-  }, [currentGame]);
+  }, [currentGame, isArabic]); // Restart when language changes
 
   const handleDragStart = (
     e: React.DragEvent,
@@ -544,52 +589,78 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
   };
 
   const checkAnswer = async () => {
-    if (isCompleted) return;
+    try {
+      if (isCompleted) return;
 
-    const userHeadline = userAnswer.join(" ").trim();
-    const correctHeadline = currentGame.data.randomized.join(" ").trim();
-    const isCorrect =
-      userHeadline.toLowerCase() === correctHeadline.toLowerCase();
+      if (!currentGame) {
+        console.error("No current game available");
+        return;
+      }
 
-    setIsCompleted(true);
-    setShowResult(true);
+      const userHeadline = userAnswer.join(" ").trim();
+      const correctHeadline = currentGame.data.randomized.join(" ").trim();
+      const isCorrect =
+        userHeadline.toLowerCase() === correctHeadline.toLowerCase();
 
-    addCompletedGame(currentGame.id, isCorrect);
+      setIsCompleted(true);
+      setShowResult(true);
 
-    if (isCorrect) {
-      // Initialize audio and play success sound
-      initAudio();
-      playSuccessSound();
+      addCompletedGame(currentGame.id, isCorrect);
 
-      // Show celebration animation
-      setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 3000);
+      if (isCorrect) {
+        // Initialize audio and play success sound
+        try {
+          initAudio();
+          playSuccessSound();
+        } catch (audioError) {
+          console.error("Error playing audio:", audioError);
+        }
 
-      setAnswer(true);
-      setScore((prevScore) => prevScore + 1);
+        // Show celebration animation
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 3000);
 
-      await insertGameScore(1);
+        setAnswer(true);
+        setScore((prevScore) => prevScore + 1);
 
-      const newAccumulatedScore = updateAccumulatedScore(1);
+        try {
+          await insertGameScore(1);
+        } catch (scoreError) {
+          console.error("Error inserting score:", scoreError);
+        }
 
-      toast({
-        title: "صحيح! 🎉",
-        description: `لقد رتبت العنوان بشكل مثالي!`,
-        className:
-          "bg-green-600 text-white font-semibold border-none shadow-xl",
-        duration: 3000,
-      });
-    } else {
-      setAnswer(false);
+        const newAccumulatedScore = updateAccumulatedScore(1);
 
-      await insertGameScore(0);
+        toast({
+          title: t("games.headlineScramble.correct"),
+          description: t("games.headlineScramble.youUnscrambledTheHeadlinePerfectly"),
+          className:
+            "bg-green-600 text-white font-semibold border-none shadow-xl",
+          duration: 3000,
+        });
+      } else {
+        setAnswer(false);
 
-      toast({
-        title: "ليس صحيحاً تماماً",
-        description: "لا تقلق، حاول التالي!",
-        className: "bg-red-500 text-white font-semibold border-none shadow-xl",
-        duration: 3000,
-      });
+        try {
+          await insertGameScore(0);
+        } catch (scoreError) {
+          console.error("Error inserting score:", scoreError);
+        }
+
+        toast({
+          title: t("games.headlineScramble.notQuiteRight"),
+          description: t("games.headlineScramble.dontWorryTryTheNextOne"),
+          className: "bg-red-500 text-white font-semibold border-none shadow-xl",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error in checkAnswer:", error);
+        toast({
+          title: t("common.error"),
+          description: t("common.tryAgain"),
+          variant: "destructive",
+        });
     }
   };
 
@@ -604,7 +675,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
 
   const leaderboardUrl = isArticleView
     ? `/leaderboard?${new URLSearchParams({
-        name: "العنوان المختلط",
+        name: t("games.headlineScramble.name"),
         duration: "month",
         game_type: "headline_scramble",
         top_k: "10",
@@ -612,7 +683,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
         score_type: "sum",
       }).toString()}`
     : `/games/leaderboard?${new URLSearchParams({
-        name: "العنوان المختلط",
+        name: t("games.headlineScramble.name"),
         duration: "month",
         game_type: "headline_scramble",
         top_k: "10",
@@ -621,45 +692,62 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
       }).toString()}`;
 
   const nextHeadline = () => {
-    setAnswer(false);
+    try {
+      setAnswer(false);
 
-    if (isArticleView) {
-      const nextIndex = currentGameIndex + 1;
-      if (nextIndex < gameData.length) {
-        setCurrentGameIndex(nextIndex);
+      if (isArticleView) {
+        const nextIndex = currentGameIndex + 1;
+        if (nextIndex < gameData.length) {
+          setCurrentGameIndex(nextIndex);
+        } else {
+          setAllGamesCompleted(true);
+          setShowReplayDialog(true);
+        }
+        return;
+      }
+
+      const playedGames = getPlayedGames();
+      const completedGameIds = playedGames.handle_scramble.gameIds;
+
+      const nextUncompletedIndex = gameData.findIndex(
+        (game, index) =>
+          index > currentGameIndex && !completedGameIds.includes(game.id)
+      );
+
+      if (nextUncompletedIndex !== -1) {
+        setCurrentGameIndex(nextUncompletedIndex);
       } else {
         setAllGamesCompleted(true);
         setShowReplayDialog(true);
       }
-      return;
-    }
-
-    const playedGames = getPlayedGames();
-    const completedGameIds = playedGames.handle_scramble.gameIds;
-
-    const nextUncompletedIndex = gameData.findIndex(
-      (game, index) =>
-        index > currentGameIndex && !completedGameIds.includes(game.id)
-    );
-
-    if (nextUncompletedIndex !== -1) {
-      setCurrentGameIndex(nextUncompletedIndex);
-    } else {
-      setAllGamesCompleted(true);
-      setShowReplayDialog(true);
+    } catch (error) {
+      console.error("Error in nextHeadline:", error);
+      // Force a re-render by resetting state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     }
   };
 
   const resetCurrentGame = () => {
-    if (currentGame) {
-      const shuffled = [...currentGame.data.randomized].sort(
-        () => Math.random() - 0.5
-      );
-      setAvailableWords(shuffled);
-      setUserAnswer([]);
-      setIsCompleted(false);
-      setShowResult(false);
-      setAnswer(false);
+    try {
+      if (currentGame) {
+        const shuffled = [...currentGame.data.randomized].sort(
+          () => Math.random() - 0.5
+        );
+        setAvailableWords(shuffled);
+        setUserAnswer([]);
+        setIsCompleted(false);
+        setShowResult(false);
+        setAnswer(false);
+      }
+    } catch (error) {
+      console.error("Error resetting game:", error);
+      toast({
+        title: t("common.error"),
+        description: t("common.anErrorOccurredPleaseTryAgain"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -683,8 +771,126 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
     return isArticleView ? scrambleGame : <Layout>{scrambleGame}</Layout>;
   }
 
+  // Add effect to prevent browser translation from breaking the game
+  useEffect(() => {
+    try {
+      // Add translate="no" to prevent browser translation
+      if (gameContainerRef.current) {
+        gameContainerRef.current.setAttribute('translate', 'no');
+        gameContainerRef.current.setAttribute('data-translate', 'no');
+        gameContainerRef.current.setAttribute('data-notranslate', 'true');
+      }
+
+      // Add translate="no" to all interactive elements
+      const addTranslateNo = (element: HTMLElement) => {
+        if (element) {
+          element.setAttribute('translate', 'no');
+          element.setAttribute('data-translate', 'no');
+        }
+      };
+
+      // Apply to all buttons and interactive elements
+      const buttons = document.querySelectorAll('button, [role="button"]');
+      buttons.forEach(btn => addTranslateNo(btn as HTMLElement));
+
+      // Detect if browser translation is active
+      const detectTranslation = () => {
+        try {
+          const body = document.body;
+          if (body) {
+            // Check for Google Translate wrapper
+            const hasGoogleTranslate = body.classList.contains('translated-ltr') || 
+                                       body.classList.contains('translated-rtl') ||
+                                       document.querySelector('.goog-te-banner-frame') !== null ||
+                                       document.querySelector('#google_translate_element') !== null;
+            
+            if (hasGoogleTranslate) {
+              console.warn('Browser translation detected - game may not work correctly');
+              // Show a warning to the user
+              toast({
+                title: t("common.error"),
+                description: "Browser translation may break the game. Please disable translation for the best experience.",
+                variant: "destructive",
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error detecting translation:", error);
+        }
+      };
+
+      detectTranslation();
+      
+      // Monitor for translation changes
+      const observer = new MutationObserver((mutations) => {
+        try {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              detectTranslation();
+            }
+            // Re-apply translate="no" to any new elements added
+            if (mutation.type === 'childList') {
+              mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const element = node as HTMLElement;
+                  if (element.tagName === 'BUTTON' || element.hasAttribute('role')) {
+                    addTranslateNo(element);
+                  }
+                  // Also apply to children
+                  element.querySelectorAll('button, [role="button"]').forEach(btn => {
+                    addTranslateNo(btn as HTMLElement);
+                  });
+                }
+              });
+            }
+          });
+        } catch (error) {
+          console.error("Error in mutation observer:", error);
+        }
+      });
+
+      if (document.body) {
+        observer.observe(document.body, {
+          attributes: true,
+          attributeFilter: ['class'],
+          childList: true,
+          subtree: true
+        });
+      }
+
+      // Global error handler for DOM mutations
+      const handleError = (event: ErrorEvent) => {
+        if (event.message && (
+          event.message.includes('removeChild') ||
+          event.message.includes('Failed to execute') ||
+          event.message.includes('Node')
+        )) {
+          console.error('DOM mutation error detected (likely from browser translation):', event.message);
+          event.preventDefault();
+          // Try to recover by forcing a re-render
+          setTimeout(() => {
+            if (gameContainerRef.current) {
+              setCurrentGameIndex(prev => prev);
+            }
+          }, 100);
+          return false;
+        }
+      };
+
+      window.addEventListener('error', handleError);
+
+      return () => {
+        observer.disconnect();
+        window.removeEventListener('error', handleError);
+      };
+    } catch (error) {
+      console.error("Error setting up translation protection:", error);
+    }
+  }, [toast]);
+
   const scrambleGame = (
-    <div className="game-area relative" dir="rtl">
+    <section className="py-8">
+    <div ref={gameContainerRef} className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"} translate="no">
       {/* Enhanced Celebration Animation */}
       {showCelebration && (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
@@ -722,11 +928,19 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
         </div>
       )}
 
-      <div className="game-container">
+      <div className="game-container3" translate="no">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8"> {/* Main Content: Games Grid + Most Read Sidebar */}
+        <div className="lg:col-span-2"> {/* Games Grid - Takes 2 columns on large screens */}
         {/* Header Section */}
-        <div className="mb-4">  
-          <div className="flex items-center justify-between mb-4 px-2 text-right">
-            <h1 className="text-2xl md:text-3xl font-bold">العنوان المختلط</h1>
+        <div className="mb-6" translate="no">  
+        <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+          <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+            <div className="flex items-center gap-2">
+              <img src={ScrambleArabic} alt="Sortd Logo" className="w-20 h-20" />
+              <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.headlineScramble.name")}</h2>
+            </div>
+            <div className="flex items-center gap-4">
+            {/* Leaderboard Button */}
             {!user?.isAnonymous && (
             isArticleView ? (
               <a
@@ -744,63 +958,57 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span aria-label="لوحة المتصدرين">
+                    <span aria-label={t("common.leaderboard")}>
                       <Trophy size={18} />
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent>لوحة المتصدرين</TooltipContent>
+                  <TooltipContent>{t("common.leaderboard")}</TooltipContent>
                 </Tooltip>
               </a>
             ) : (
-              <Button
-                onClick={() => navigate(leaderboardUrl)}
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span aria-label="لوحة المتصدرين">
-                      <Trophy size={18} />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>لوحة المتصدرين</TooltipContent>
-                </Tooltip>
-              </Button>
-            )
-            )}
+              <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+            ))}
+            {/* Back to Home Button */}
+            <BackToHome text={t("common.backToHome")} />
+            </div>
           </div>
         </div>
+        
+        <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+
 
         {/* All Games Completed Message */}
         {allGamesCompleted && hasDeclinedReplay && !isArticleView && (
           <div className="mb-6 bg-card border border-border p-6 rounded-lg shadow-lg text-center">
             <h3 className="text-2xl font-semibold mb-4 text-primary">
-              جميع الألعاب اكتملت!
+              {t("games.headlineScramble.allGamesCompleted")}
             </h3>
             <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg mb-4">
               <div className="text-xl font-semibold text-secondary mb-2">
-                النتيجة الإجمالية: {accumulatedScore}
+                {t("games.headlineScramble.totalScore", { score: accumulatedScore })}
               </div>
               <div className="text-muted-foreground">
                 {score === gameData.length
-                  ? "نتيجة مثالية! عمل رائع!"
+                  ? t("games.headlineScramble.perfectSessionAmazingWork")
                   : score > gameData.length / 2
-                    ? "جلسة رائعة! أحسنت!"
-                    : "جهد جيد! حاول مرة أخرى للتحسين!"}
+                    ? t("games.headlineScramble.greatSessionWellDone")
+                    : t("games.headlineScramble.goodEffortTryAgainToImprove")}
               </div>
             </div>
             <p className="text-muted-foreground mb-6">
-              لقد أنهيت جميع الألعاب المتاحة. سنضيف ألعاباً جديدة قريباً!
+              {t("games.headlineScramble.youveFinishedAllAvailableGamesWellAddNewGamesSoon")}
             </p>
             <div className="space-y-3 text-center">
               <Button
                 onClick={handleReplayConfirm}
                 className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full transition-colors"
               >
-                <RefreshCw className="ml-2 h-4 w-4" />
-                إعادة تشغيل هذه الألعاب
+                <RefreshCw className={isArabic ? "ml-2" : "mr-2"} h-4 w-4 />
+                {t("games.headlineScramble.replayTheseGames")}
               </Button>
               <p className="text-sm text-muted-foreground">
-                أو انتظر إضافة ألعاب جديدة
+                {t("games.headlineScramble.orWaitForNewGamesToBeAdded")}
               </p>
             </div>
           </div>
@@ -808,33 +1016,47 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
 
         {/* Game Content */}
         {!(allGamesCompleted && hasDeclinedReplay && !isArticleView) && (
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full md:w-[70%]">
-              <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border flex-row-reverse">
-                <div className="flex items-center gap-2 ">
-                  <Button variant="outline" size="sm">
-                    النتيجة المتراكمة الكلية: {accumulatedScore}
-                  </Button>
-                </div>
+          <div className="flex flex-col md:flex-row w-full gap-4 mt-8" translate="no">
+            <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden pb-0 w-full md:w-[100%]" translate="no">
+            <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    الجولة: {currentGameIndex + 1}/{gameData.length}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-[#63AAE4] text-white font-[700] text-[16px] rounded-[100px] border-none hover:bg-[#63AAE4] hover:text-white"
+                  >
+                    {t("games.headlineScramble.round", {
+                      current: currentGameIndex + 1,
+                      total: gameData.length,
+                    })}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowInstructions(true)}
-                    className="bg-muted flex items-center gap-2"
-                  >
-                    <HelpCircle className="mr-1 h-4 w-4" /> مساعدة
+                    className="bg-white text-black font-[700] text-[16px]  text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
+                  >{t("common.help")}
+                  <HelpCircle className="mr-1 h-4 w-4" />
                   </Button>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-[#C62426] text-white font-[700] text-[16px] hover:bg-[#C62426] hover:text-white border-none"
+                  >
+                    {t("games.headlineScramble.totalAccumulatedScore", {
+                      score: accumulatedScore,
+                    })}
+                  </Button>
+                </div>
+
               </div>
 
               {/* User's Answer Area */}
               <div className="px-3 py-2">
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  إجابتك:
+                  {t("games.headlineScramble.yourAnswer")}
                   {isCompleted &&
                     (answer ? (
                       <CheckCircle className="text-green-600 w-5 h-5 animate-pulse" />
@@ -855,14 +1077,14 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
                   {userAnswer.length === 0 ? (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-gray-400 italic text-center">
-                        اسحب الكلمات هنا أو انقر على الكلمات أدناه لبناء عنوانك...
+                        {t("games.headlineScramble.dragWordsHereOrClickWordsBelowToBuildYourHeadline")}
                       </p>
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2 content-start">
                       {userAnswer.map((word, index) => (
                         <button
-                          key={`answer-${index}`}
+                          key={`answer-${word}`}
                           onClick={() => handleWordClick(word, false)}
                           draggable={!isCompleted}
                           onDragStart={(e) =>
@@ -898,7 +1120,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
                     <div className="flex flex-wrap gap-2 content-start">
                       {availableWords.map((word, index) => (
                         <button
-                          key={`available-${index}`}
+                          key={`available-${word}`}
                           onClick={() => handleWordClick(word, true)}
                           draggable={!isCompleted}
                           onDragStart={(e) =>
@@ -925,6 +1147,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
 
               {/* Result Display */}
               {showResult && !isArticleView && currentGame?.article_detail && (
+                <div className="py-3 px-3">
                 <a
                   href={addUtmParams(currentGame?.article_detail?.link || "")}
                   target="_blank"
@@ -945,14 +1168,31 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className="font-semibold mb-1 text-blue-900 dark:text-blue-100">
-                      اقرأ المزيد عن المقال:
+                    <h3 
+                      className="
+                        font-bold
+                        text-[18px] leading-[40px]
+                        text-black
+                        text-right
+                      "
+                    >
+                      {t("games.headlineScramble.readMoreAboutArticle")}
                     </h3>
-                    <p className="text-blue-800 dark:text-blue-200 font-medium leading-relaxed hover:underline cursor-pointer">
+                    <p
+                      className="
+                        font-bold
+                        text-[18px] leading-[40px]
+                        text-black
+                        text-right
+                        cursor-pointer
+                        hover:underline
+                      "
+                    >
                       {currentGame?.data?.headline}
-                      <span className="mr-2 align-middle inline-block">
-                        <ExternalLink 
-                          className="w-5 h-5 text-primary mb-2"
+
+                      <span className="mr-2 inline-flex align-middle">
+                        <ExternalLink
+                          className="w-5 h-5 font-bold text-[18px] leading-[40px] align-middle text-[#C62426]"
                           onClick={(e) => {
                             e.stopPropagation();
                             window.open(
@@ -963,8 +1203,10 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
                         />
                       </span>
                     </p>
+
                   </div>
                 </a>
+                </div>
               )}
 
               {showResult && isArticleView && (
@@ -976,83 +1218,110 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
               )}
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3 justify-center">
+              <div className="flex flex-wrap gap-3 justify-center pt-4" translate="no">
                 {!isCompleted ? (
                   <>
                     <button
                       onClick={checkAnswer}
                       disabled={userAnswer.length === 0}
-                      className="flex items-center gap-2 px-5 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                      className="flex items-center gap-4 px-5 py-4 bg-[#55B45C] text-white rounded-tl-[8px] rounded-tr-[8px] rounded-br-none rounded-bl-none font-[700]
+                      text-[18px] leading-[100%] text-center align-middle hover:bg-[#55B45C] disabled:opacity-80 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      translate="no"
                     >
-                      <Check size={18} className="mr-1" />
-                      إرسال
+                      {t("games.headlineScramble.submit")}
+                      <img src={CheckedWhiteIcon} alt="Checked White Icon" className="w-6 h-6 mr-1" />
                     </button>
 
                     <button
                       onClick={resetCurrentGame}
-                      className="flex items-center gap-2 px-5 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                      className="
+                        flex items-center justify-center gap-2
+                        px-5 py-2
+                        bg-[#9B9B9B] text-white
+                        rounded-tl-[8px] rounded-tr-[8px] rounded-bl-none rounded-br-none
+                        font-[700]
+                        text-[18px] leading-[100%]
+                        text-center align-middle
+                        hover:bg-[#9B9B9B]
+                        transition-all duration-200
+                        shadow-lg hover:shadow-xl
+                        transform hover:scale-105
+                      "
+                      translate="no"
                     >
-                      إعادة تعيين
+                      {t("games.headlineScramble.reset")}
                     </button>
+
                   </>
                 ) : !isArticleView ? (
                   <button
                     onClick={nextHeadline}
-                    className="px-8 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="flex items-center gap-4 px-5 py-4 bg-[#6AAFE6] text-white rounded-tl-[8px] rounded-tr-[8px] rounded-br-none rounded-bl-none font-[700]
+                      text-[18px] leading-[100%] text-center align-middle hover:bg-[#6AAFE6] disabled:opacity-80 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    translate="no"
                   >
-                    التالي ←
+                    {t("games.headlineScramble.next")}
+                    <img src={ArrowTransparent} alt="Arrow Transparent" className="w-5 h-5 ml-2" />
                   </button>
+
                 ) : (
                   <button
-                    onClick={handleReplayConfirm}
-                    className="px-8 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                  onClick={handleReplayConfirm}
+                    className="
+                      px-8 py-3
+                      bg-[#6AAFE6]
+                      text-white
+                      rounded-[8px]
+                      font-extrabold
+                      text-[16px]
+                      leading-none
+                      transition-colors duration-200
+                      hover:bg-[#5A9FD8]
+                    "
+                    translate="no"
                   >
-                    العب مرة أخرى
+                    {t("games.headlineScramble.playAgain")}
+                    <img src={ArrowTransparent} alt="Arrow Transparent" className="w-5 h-5 ml-2" />
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="w-full md:w-[30%]">
-              <Card>
-                <CardHeader className="text-right">
-                  <CardTitle className="text-lg">كيفية اللعب</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2 text-right">
-                  <p className="text-muted-foreground mb-4">
-                    اسحب وأفلت الكلمات لترتيب عناوين الأخبار! يمكنك أيضاً إعادة
-                    ترتيب الكلمات داخل كل منطقة.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            
           </div>
         )}
 
         <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-          <DialogContent dir="rtl">
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
             <DialogHeader>
-              <DialogTitle>كيفية لعب لعبة العنوان المختلط</DialogTitle>
+              <DialogTitle>{t("games.headlineScramble.howToPlayHeadlineScrambleGame")}</DialogTitle>
               <DialogDescription>
                 <div className="space-y-4 mt-4">
                   <p className="text-muted-foreground mb-4">
-                    اسحب وأفلت الكلمات لترتيب عناوين الأخبار! يمكنك أيضاً إعادة
-                    ترتيب الكلمات داخل كل منطقة.
+                    {t("games.headlineScramble.dragAndDropWordsToUnscrambleTheNewsHeadlinesYouCanAlsoReorderWordsWithinEachArea")}
                   </p>
                 </div>
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button onClick={() => setShowInstructions(false)}>فهمت</Button>
+              <Button onClick={() => setShowInstructions(false)}>{t("games.headlineScramble.gotIt")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
+        {/* Most Read Sidebar - Takes 1 column on large screens */}
+        <div className="lg:col-span-1"> {/* Most Read Sidebar - Takes 1 column on large screens */}
+          <HowToPlayInstruction title={t("games.headlineScramble.howToPlay")} text={t("games.headlineScramble.dragAndDropWordsToUnscrambleTheNewsHeadlinesYouCanAlsoReorderWordsWithinEachArea")} > </HowToPlayInstruction>
+          <MostReadSidebar />
+
+        </div>
+        </div>
       </div>
       <UserRegistrationDialog
         isOpen={showDialog}
         onClose={() => setShowDialog(false)}
         onSuccess={handleUserRegistrationSuccess}
-        title="املأ التفاصيل لإظهار لوحة المتصدرين"
+        title={t("games.headlineScramble.fillTheDetailsToShowLeaderboard")}
       />
       <ReplayDialog
         isOpen={showReplayDialog}
@@ -1131,6 +1400,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
         }
       `}</style>
     </div>
+    </section>
   );
 
   return isArticleView ? scrambleGame : <Layout>{scrambleGame}</Layout>;

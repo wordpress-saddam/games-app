@@ -28,6 +28,13 @@ import GamesServices from "../../../v2-services/games-service";
 import { useTranslation } from "react-i18next";
 import { formatedTime, formatNumberForDisplay } from "../../utils/numberFormatter";
 import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import { LightButton, BlueButton } from "../../components/ui/GamesButton";
+import MinesweeperImage from "../../assets/mine-hunt.png";
 
 type Cell = {
   isMine: boolean;
@@ -39,7 +46,8 @@ type Cell = {
 type GameStatus = "idle" | "playing" | "won" | "lost";
 
 const MinesweeperWithBlast = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const navigate = useNavigate();
   const { user } = useUser();
   const gameContainerRef = useRef(null);
@@ -348,18 +356,18 @@ const MinesweeperWithBlast = () => {
       .padStart(2, "0")}`;
   };
 
-  const params = new URLSearchParams({
+  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
     name: "Mine Hunt Logic",
     duration: "month",
     game_type: "mine-hunt",
     top_k: "10",
     sort_order: "asc",
     score_type: "min",
-  });
+  }).toString()}`;
 
   const handleLeaderBoard = () => {
     if (time == 0 || gameStatus === "lost" || gameStatus === "won") {
-      navigate(`/games/leaderboard?${params.toString()}`);
+      navigate(leaderboardUrl);
     } else {
       setDialog(true);
     }
@@ -377,73 +385,67 @@ const MinesweeperWithBlast = () => {
 
   return (
     <Layout>
-      <div className="game-area">
-        <div className="game-container">
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h1 className="text-2xl md:text-3xl font-bold ">
-                {t("games.mineHunt.name")}
-              </h1>
-              {!user?.isAnonymous && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleLeaderBoard}
-                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-                    aria-label={t("common.leaderboard")}
-                  >
-                    <Trophy size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("common.leaderboard")}</TooltipContent>
-              </Tooltip>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full md:w-[70%]  ">
-              <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => initializeBoard()}
-                  >
-                    <RefreshCw className="mr-1 h-4 w-4" /> {t("common.newGame")}
-                  </Button>
-
-                  <div className="flex items-center gap-1 bg-background rounded-md px-3 py-1 text-sm font-medium border border-border">
-                    <Flag className="h-4 w-4 text-red-500" />
-                    <span>{formatNumberForDisplay(mineCount - flagCount)}</span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-background rounded-md px-3 py-1 text-sm font-medium border border-border">
-                  
-                    <span> <TimerDisplay time={time} /></span>
+      <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
+        <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+          <div className="game-container3" translate="no">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+              {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                {/* Header Section */}
+                <div className="mb-6" translate="no">
+                  <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                    <div className="flex items-center gap-2">
+                      <img src={MinesweeperImage} alt="Minesweeper Logo" className="w-20 h-20" />
+                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.mineHunt.name")}</h2>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Leaderboard Button */}
+                      {!user?.isAnonymous && (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+                      )}
+                      {/* Back to Home Button */}
+                      <BackToHome text={t("common.backToHome")} />
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Button
-                    onClick={() => setIsSettingsOpen(true)}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Settings size={16} />
-                    {difficulty === "beginner" ? t("games.mineHunt.beginner") : 
-                     difficulty === "intermediate" ? t("games.mineHunt.intermediate") : 
-                     t("games.mineHunt.expert")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsHelpOpen(true)}
-                    className="bg-muted flex items-center gap-2"
-                  >
-                    <HelpCircle className="mr-1 h-4 w-4" /> {t("common.help")}
-                  </Button>
-                </div>
-              </div>
+
+                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Difficulty Button */}
+                      <BlueButton onClick={() => setIsSettingsOpen(true)}>
+                        {difficulty === "beginner" ? t("games.mineHunt.beginner") : 
+                         difficulty === "intermediate" ? t("games.mineHunt.intermediate") : 
+                         t("games.mineHunt.expert")}
+                        <Settings className={isArabic ? "ml-1 h-4 w-4" : "mr-1 h-4 w-4"} />
+                      </BlueButton>
+                      {/* Help Button */}
+                      <LightButton onClick={() => setIsHelpOpen(true)}>
+                        {t("common.help")}
+                        <HelpCircle className={isArabic ? "ml-1 h-4 w-4" : "mr-1 h-4 w-4"} />
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Flag Count Button */}
+                      <LightButton>
+                        <Flag className={isArabic ? "ml-1 h-4 w-4 text-red-500" : "mr-1 h-4 w-4 text-red-500"} />
+                        {mineCount - flagCount}
+                      </LightButton>
+                      {/* Timer Button */}
+                      <LightButton>
+                        <TimerDisplay time={time} />
+                      </LightButton>
+                      {/* New Game Button */}
+                      <LightButton onClick={() => initializeBoard()}>
+                        {t("common.newGame")}
+                        <RefreshCw className={isArabic ? "ml-1 h-4 w-4" : "mr-1 h-4 w-4"} />
+                      </LightButton>
+                    </div>
+                  </div>
 
               <div
                 className={"p-4 flex justify-center overflow-x-auto "}
@@ -481,7 +483,7 @@ const MinesweeperWithBlast = () => {
                           cell.isMine ? (
                             <Bomb className="h-4 w-4 text-red-500" />
                           ) : (
-                            cell.neighborMines > 0 && formatNumberForDisplay(cell.neighborMines)
+                            cell.neighborMines > 0 && cell.neighborMines
                           )
                         ) : cell.isFlagged ? (
                           <Flag className="h-4 w-4 text-red-500" />
@@ -491,24 +493,25 @@ const MinesweeperWithBlast = () => {
                   )}
                 </div>
               </div>
-            </div>
+                </div>
+              </div>
 
-            <div className="w-full md:w-[30%] ">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t("common.howToPlay")}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <div className="space-y-4">
+              {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1">
+                <HowToPlayInstruction 
+                  title={t("common.howToPlay")}
+                  text=""
+                >
+                  <div className="text-[16px] space-y-3 text-white">
                     <p>
                       {t("games.mineHunt.theGoalIsToRevealAllCellsWithoutHittingAnyMines")}
                     </p>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-muted rounded-sm flex items-center justify-center border border-border"></div>
+                      <div className="w-6 h-6 bg-white/20 rounded-sm flex items-center justify-center border border-white/30"></div>
                       <span>{t("games.mineHunt.leftClickToRevealACell")}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-muted rounded-sm flex items-center justify-center border border-border">
+                      <div className="w-6 h-6 bg-white/20 rounded-sm flex items-center justify-center border border-white/30">
                         <Flag className="h-4 w-4 text-red-500" />
                       </div>
                       <span>
@@ -516,20 +519,21 @@ const MinesweeperWithBlast = () => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-background rounded-sm flex items-center justify-center border border-border text-blue-500">
-                      {formatNumberForDisplay(1)}
+                      <div className="w-6 h-6 bg-white/20 rounded-sm flex items-center justify-center border border-white/30 text-blue-300">
+                        {1}
                       </div>
                       <span>
                         {t("games.mineHunt.numbersShowHowManyMinesAreAdjacentToTheCell")}
                       </span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </HowToPlayInstruction>
+                <MostReadSidebar />
+              </div>
             </div>
           </div>
           <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md" dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>{t("games.mineHunt.howToPlayMineHuntLogic")}</DialogTitle>
               </DialogHeader>
@@ -551,7 +555,7 @@ const MinesweeperWithBlast = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-background rounded-sm flex items-center justify-center border border-border text-blue-500">
-                    {formatNumberForDisplay(1)}
+                    {1}
                   </div>
                   <span>
                     {t("games.mineHunt.numbersShowHowManyMinesAreAdjacentToTheCell")}
@@ -565,7 +569,7 @@ const MinesweeperWithBlast = () => {
           </Dialog>
 
         <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <DialogContent>
+            <DialogContent dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>{t("games.mineHunt.gameSettings")}</DialogTitle>
                 <DialogDescription>
@@ -625,7 +629,7 @@ const MinesweeperWithBlast = () => {
 
           {/* Game Over dialog */}
           <Dialog open={isGameOverOpen} onOpenChange={setIsGameOverOpen}>
-            <DialogContent>
+            <DialogContent dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>
                   {gameStatus === "won" ? (
@@ -685,7 +689,7 @@ const MinesweeperWithBlast = () => {
             </DialogContent>
           </Dialog>
           <Dialog open={dialog} onOpenChange={setDialog}>
-            <DialogContent>
+            <DialogContent dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>{t("common.leaveGame")}</DialogTitle>
                 <DialogDescription>
@@ -708,7 +712,7 @@ const MinesweeperWithBlast = () => {
                   className="bg-gray-500"
                   onClick={() => {
                     setDialog(false);
-                    navigate(`/games/leaderboard?${params.toString()}`);
+                    navigate(leaderboardUrl);
                   }}
                 >
                   {t("common.yesLeave")}
@@ -716,20 +720,8 @@ const MinesweeperWithBlast = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          {/* Top Ad */}
-          {/* <div className="w-full bg-muted/30 rounded-lg p-4 my-4">
-            <div className="text-center">
-              <span className="text-xs text-muted-foreground">Advertisement</span>
-              <div id="game-top-ad" className="bg-card border border-border h-32 w-full rounded flex items-center justify-center">
-                <div className="flex items-center space-x-2 text-muted-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
-                  <span>Premium Ad</span>
-                </div>
-              </div>
-            </div>
-          </div> */}
         </div>
-      </div>
+      </section>
     </Layout>
   );
 };

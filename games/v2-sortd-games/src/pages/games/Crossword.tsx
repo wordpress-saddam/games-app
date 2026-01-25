@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import GamesServices from "../../../v2-services/games-service";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";import { Trophy, HelpCircle, RefreshCw, Lightbulb, Check, Clock, Delete, Eye } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Trophy, HelpCircle, RefreshCw, Lightbulb, Check, Clock, Delete, Eye } from "lucide-react";
 import { ExternalLink } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import CrosswordImage from "../../assets/crossword.png";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
 type Clue = { word: string; clue: string };
 type CrosswordArticle = {
   title: string;
@@ -49,6 +58,7 @@ const MAX_WORDS = 10;
 const GAME_TYPE = "crossword";
 
 const ARABIC_ALPHABET = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي".split('');
+const ENGLISH_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
 
 // Normalize Arabic text by removing diacritics and handling hamza variations
 const sanitizeArabic = (s: string) => {
@@ -199,8 +209,11 @@ type CrosswordProps = {
 
 const Crossword: React.FC<CrosswordProps> = ({ games, gameId }) => {
   console.log("[Saddam] games", games);
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const { user } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const isArticleView = searchParams.get("src") === "article";
 
@@ -209,7 +222,25 @@ const Crossword: React.FC<CrosswordProps> = ({ games, gameId }) => {
 
   // Memoized current game data
   const current = useMemo(() => games?.[currentGameIndex], [games, currentGameIndex]);
-  const title = current?.title || "الكلمات المتقاطعة";
+  const title = current?.title || t("games.crossword.name");
+  
+  // Game schema for SEO
+  const baseUrl = typeof window !== "undefined" 
+    ? `${window.location.protocol}//${window.location.host}` 
+    : "https://asharqgames-uat.sortd.pro";
+  const gameUrl = `${baseUrl}${location.pathname}${location.search ? location.search : ""}`;
+  const gameName = t("games.crossword.name");
+  
+  useGameSchema(
+    {
+      name: gameName,
+      headline: `${gameName} - ${t("common.asharqGames")}`,
+      description: t("games.crossword.description"),
+      url: gameUrl,
+      image: `${baseUrl}/assets/crossword.jpg`,
+      isAccessibleForFree: true,
+    },
+  );
 
   // Memoized puzzle generation
   const initialPuzzle = useMemo(() => buildCrosswordFromClues(current?.clues || []), [current]);
@@ -421,7 +452,7 @@ const Crossword: React.FC<CrosswordProps> = ({ games, gameId }) => {
     <ul className="space-y-2">
       {list.map(w => (
         <li key={w.number} className="text-sm">
-          <span className="font-semibold">{w.number}. {w.direction === "across" ? "أفقي" : "عمودي"}</span>{" "}
+          <span className="font-semibold">{w.number}. {w.direction === "across" ? t("games.crossword.across") : t("games.crossword.down")}</span>{" "}
           <span className="text-foreground/80">{w.clue}</span>
         </li>
       ))}
@@ -430,6 +461,7 @@ const Crossword: React.FC<CrosswordProps> = ({ games, gameId }) => {
 
   // New function to move to next puzzle
   const moveToNextPuzzle = () => {
+    setShowCongratulations(false);
     resetGame(true); // Pass true to advance to next game
     setShowSolutionRevealedDialog(false);
   };
@@ -445,119 +477,207 @@ const Crossword: React.FC<CrosswordProps> = ({ games, gameId }) => {
     navigate("/"); // Redirect to home only if not in article view and not logged in
   }
 
+  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+    name: t("games.crossword.name"),
+    duration: "month",
+    game_type: GAME_TYPE,
+    top_k: "10",
+    sort_order: "desc",
+    score_type: "max",
+  }).toString()}`;
+
   return (
-    <div className="game-area" dir="rtl">
-      <div className="game-container">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h1 className="text-2xl md:text-3xl font-bold">{title}</h1>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-background rounded-md px-3 py-1 text-sm font-medium border border-border">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{formatTime(timer)}</span>
-              </div>
-              {!user?.isAnonymous && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() =>
-                      navigate(
-                        `/games/leaderboard?${new URLSearchParams({
-                          name: "Crossword",
-                          duration: "month",
-                          game_type: GAME_TYPE,
-                          top_k: "10",
-                          sort_order: "desc",
-                          score_type: "max",
-                        }).toString()}`
+    <section className="py-8">
+      <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+        <div className="game-container3" translate="no">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+            <div className="lg:col-span-2">
+              {/* Header Section */}
+              <div className="mb-6" translate="no">
+                <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                  <div className="flex items-center gap-2">
+                    <img src={CrosswordImage} alt="Crossword Logo" className="w-20 h-20" />
+                    <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.crossword.name")}</h2>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {/* Leaderboard Button */}
+                    {!user?.isAnonymous && (
+                      isArticleView ? (
+                        <a
+                          href="#"
+                          className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg rounded-md px-3 py-2 flex items-center"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (!user?.username) {
+                              // Handle registration if needed
+                            } else {
+                              window.location.href = leaderboardUrl;
+                            }
+                          }}
+                          rel="noopener noreferrer"
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span aria-label={t("common.leaderboard")}>
+                                <Trophy size={18} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>{t("common.leaderboard")}</TooltipContent>
+                          </Tooltip>
+                        </a>
+                      ) : (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
                       )
-                    }
-                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-                  >
-                    <Trophy size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>لوحة المتصدرين</TooltipContent>
-              </Tooltip>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row w-full gap-4">
-          <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full md:w-[70%]">
-            <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => resetGame(false)}>
-                  <RefreshCw className="ml-1 h-4 w-4" /> إعادة تعيين
-                </Button>
-                <Button variant="outline" size="sm" onClick={giveHintLetter} disabled={gameCompleted}>
-                  <Lightbulb className="ml-1 h-4 w-4" /> حرف مساعد
-                </Button>
-                <Button variant="outline" size="sm" onClick={revealWord} disabled={gameCompleted}>
-                  <Lightbulb className="ml-1 h-4 w-4" /> كشف الكلمة
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => setShowRevealConfirm(true)} disabled={gameCompleted}>
-                  <Eye className="ml-1 h-4 w-4" /> إظهار الحل الكامل
-                </Button>
+                    )}
+                    {/* Back to Home Button */}
+                    <BackToHome text={t("common.backToHome")} />
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {gameCompleted && (
-                  <Button variant="outline" size="sm" onClick={moveToNextPuzzle}>
-                    <RefreshCw className="ml-1 h-4 w-4" /> اللغز التالي
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowInstructions(true)}
-                  className="bg-muted flex items-center gap-2"
-                >
-                  <HelpCircle className="ml-1 h-4 w-4" /> مساعدة
-                </Button>
-              </div>
-            </div>
 
-            <div className="p-4 flex justify-center">
-              <div className="inline-grid grid-cols-10 gap-[1px] bg-border p-[1px]">
-                {Array.from({ length: GRID_SIZE }).map((_, r) =>
-                    Array.from({ length: GRID_SIZE }).map((_, c) => {
-                    const isBlock = puzzle.grid[r][c] === "#";
-                    const num = cellNumberMap[`${r}-${c}`];
-                    return (
-                      <div
-                        key={`${r}-${c}`}
-                        className={`relative w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-base font-medium cursor-pointer select-none
-                          ${isBlock ? "bg-foreground/10" : "bg-card border border-border"}
-                          ${!isBlock ? highlightCell(r, c) : ""}
-                            ${selected && selected.row === r && selected.col === c ? "ring-2 ring-primary" : ""} ${showSolution && !isBlock ? "bg-green-100 dark:bg-green-900/30" : ""} ${gameCompleted && !showSolution && !isBlock ? "bg-blue-100 dark:bg-blue-900/20" : ""}
-                        `}
-                        onClick={() => handleCellClick(r, c)}
+              <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+              {/* Game Content */}
+              <div className="flex flex-col md:flex-row w-full gap-4 mt-8" translate="no">
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden pb-0 w-full md:w-[100%]" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* <div className="flex items-center gap-1 bg-background rounded-md px-3 py-1 text-sm font-medium border border-border">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span>{formatTime(timer)}</span>
+                      </div> */}
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="bg-white text-black font-[700] text-[16px] text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
+                        disabled={gameCompleted}>
+                        <span>{formatTime(timer)}</span>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="bg-white text-black font-[700] text-[16px] text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
+                        onClick={() => giveHintLetter()}
+                        disabled={gameCompleted}>
+                        {t("games.crossword.hintLetter")}
+                        <Lightbulb className={`${isArabic ? "ml-1" : "mr-1"} h-4 w-4`} />
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="bg-white text-black font-[700] text-[16px] text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
+                        onClick={() => revealWord()}
+                        disabled={gameCompleted}>
+                        {t("games.crossword.revealWord")}
+                        <Lightbulb className={`${isArabic ? "ml-1" : "mr-1"} h-4 w-4`} />
+                      </Button>
+                      {/* Round/Puzzle view solution button */}
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="bg-[#63AAE4] text-white font-[700] text-[16px] rounded-[100px] border-none hover:bg-[#63AAE4] hover:text-white"
+                        onClick={() => setShowRevealConfirm(true)} 
+                        disabled={gameCompleted}>
+                        {t("games.crossword.revealFullSolution")}
+                        <Eye className={`${isArabic ? "ml-1" : "mr-1"} h-4 w-4`} />
+                      </Button>
+                      {/* Help Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowInstructions(true)}
+                        className="bg-white text-black font-[700] text-[16px] text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
                       >
-                        {!isBlock && num ? (
-                          <span className="absolute top-0 right-0 text-[10px] text-muted-foreground mr-[2px]">{num}</span>
-                        ) : null}
-                        {!isBlock ? (
-                          <span className="font-bold">{userGrid[r][c] || ""}</span>
-                        ) : null}
-                      </div>
-                    );
-                  })
-                )}
+                        {t("games.crossword.help")}
+                        <HelpCircle className="mr-1 h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Reset Button */}
+                      {/* inline-flex items-center gap-3 px-4 py-2 rounded-[8px] font-extrabold text-[16px] leading-none text-right shadow-md  */}
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="font-[700] text-[16px] text-right rounded-[100px] flex items-center gap-2 bg-gradient-to-r from-[#C62426] to-[#3F1313] text-white hover:from-[#C62426] hover:to-[#3F1313] hover:text-white"
+                        onClick={() => resetGame(false)} 
+                        disabled={gameCompleted}>
+                        {t("games.crossword.reset")}
+                        <RefreshCw className={`${isArabic ? "ml-1" : "mr-1"} h-4 w-4`} />
+                      </Button>
+                      {/* Timer */}
+                      {/* <div className="flex items-center gap-1 bg-background rounded-md px-3 py-1 text-sm font-medium border border-border">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span>{formatTime(timer)}</span>
+                      </div> */}
+                      {/* Score - if applicable */}
+                      {gameCompleted && !solutionRevealed && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-[#C62426] text-white font-[700] text-[16px] hover:bg-[#C62426] hover:text-white border-none"
+                        >
+                          {isArabic ? "مكتمل" : "Completed"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Game Controls */}
+                    
+                  {gameCompleted && (
+                  <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE]">
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={moveToNextPuzzle}>
+                          <RefreshCw className={`${isArabic ? "ml-1" : "mr-1"} h-4 w-4`} /> {t("games.crossword.nextPuzzle")}
+                        </Button>
+                    </div>
+                  </div>
+                  )}
+
+              <div className="p-4 flex justify-center">
+                <div className="inline-grid grid-cols-10 gap-[1px] bg-border p-[1px]">
+                  {Array.from({ length: GRID_SIZE }).map((_, r) =>
+                      Array.from({ length: GRID_SIZE }).map((_, c) => {
+                      const isBlock = puzzle.grid[r][c] === "#";
+                      const num = cellNumberMap[`${r}-${c}`];
+                      return (
+                        <div
+                          key={`${r}-${c}`}
+                          className={`relative w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-base font-medium cursor-pointer select-none
+                            ${isBlock ? "bg-foreground/10" : "bg-card border border-border"}
+                            ${!isBlock ? highlightCell(r, c) : ""}
+                              ${selected && selected.row === r && selected.col === c ? "ring-2 ring-primary" : ""} ${showSolution && !isBlock ? "bg-green-100 dark:bg-green-900/30" : ""} ${gameCompleted && !showSolution && !isBlock ? "bg-blue-100 dark:bg-blue-900/20" : ""}
+                          `}
+                          onClick={() => handleCellClick(r, c)}
+                        >
+                          {!isBlock && num ? (
+                            <span className="absolute top-0 right-0 text-[10px] text-muted-foreground mr-[2px]">{num}</span>
+                          ) : null}
+                          {!isBlock ? (
+                            <span className="font-bold">{userGrid[r][c] || ""}</span>
+                          ) : null}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                
               </div>
-              
-            </div>
-              {/* On-screen Arabic Keyboard */}
-          <div
-            className="
-              w-full bg-card border-t border-border p-3 md:p-4 mt-4
-              md:static md:border-none md:shadow-none md:bg-transparent md:mt-0
-              fixed bottom-0 left-0 right-0 
-              md:w-full md:max-w-lg md:mx-auto
-            "
-          >
-            <div className="grid grid-cols-7 sm:grid-cols-8 gap-1.5 sm:gap-2">
-              {ARABIC_ALPHABET.map((letter) => (
+              {/* On-screen Keyboard */}
+              <div
+                className="
+                  w-full bg-card border-t border-border p-3 md:p-4 mt-4
+                  md:static md:border-none md:shadow-none md:bg-transparent md:mt-0
+                  fixed bottom-0 left-0 right-0 
+                  md:w-full md:max-w-lg md:mx-auto
+                "
+              >
+              <div className={`grid gap-1.5 sm:gap-2 ${isArabic ? "grid-cols-7 sm:grid-cols-8" : "grid-cols-7 sm:grid-cols-9"}`}>
+              {(isArabic ? ARABIC_ALPHABET : ENGLISH_ALPHABET).map((letter) => (
                 <button
                   key={letter}
                   onClick={() => handleKeyPress(letter)}
@@ -585,186 +705,200 @@ const Crossword: React.FC<CrosswordProps> = ({ games, gameId }) => {
               >
                 <Delete className="w-6 h-6" />
               </button>
-            </div>
-          </div>
-          <div className="hidden md:block">
-            <a
-                href={current?.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col mb-4 items-center gap-4 p-4 rounded-xl  hover:shadow-md transition-shadow "
-            >
-                {/* Image */}
-                <div className="w-24 sm:w-28 md:w-32 lg:w-40 flex items-center justify-center h-[120px] sm:h-[140px]">
-                    <img
-                        src={current?.image_url}
-                        alt="صورة المقال"
-                        className="h-full w-full object-cover rounded-md"
-                        onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src =
+              </div>
+              </div>
+                  {/* Article Link - Hidden on mobile, shown on desktop */}
+                  {current?.link && (
+                    <div className="hidden md:block py-3 px-3">
+                      <a
+                        href={current?.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col mb-4 items-center gap-4 p-4 rounded-xl hover:shadow-md transition-shadow"
+                      >
+                        {/* Image */}
+                        <div className="w-24 sm:w-28 md:w-32 lg:w-40 flex items-center justify-center h-[120px] sm:h-[140px]">
+                          <img
+                            src={current?.image_url}
+                            alt={t("games.headlineScramble.readMoreAboutArticle")}
+                            className="h-full w-full object-cover rounded-md"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src =
                                 "https://idea410.digital.uic.edu/wp-content/themes/koji/assets/images/default-fallback-image.png";
-                        }}
-                    />
-                </div>
+                            }}
+                          />
+                        </div>
 
-                <div className="flex-1 text-center">
-                    <h3 className="font-semibold mb-1 text-blue-900 dark:text-blue-100">
-                        اقرأ المزيد عن المقال :{" "}
-                    </h3>
-                    <p className="text-blue-800 dark:text-blue-200 font-medium leading-relaxed hover:underline cursor-pointer">
-                        {current?.title}
-                        <span className="mr-2 align-middle inline-block">
-                            <ExternalLink
-                                className="w-5 h-5 text-primary mb-2"
+                        <div className="flex-1 text-center">
+                          <h3 className="font-bold text-[18px] leading-[40px] text-black text-right">
+                            {t("games.headlineScramble.readMoreAboutArticle")}
+                          </h3>
+                          <p className="font-bold text-[18px] leading-[40px] text-black text-right cursor-pointer hover:underline">
+                            {current?.title}
+                            <span className="mr-2 inline-flex align-middle">
+                              <ExternalLink
+                                className="w-5 h-5 font-bold text-[18px] leading-[40px] align-middle text-[#C62426]"
                                 onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.open(
-                                      current?.link,
-                                        "_blank"
-                                    );
+                                  e.stopPropagation();
+                                  window.open(current?.link, "_blank");
                                 }}
-                            />
-                        </span>
-                    </p>
-                </div>
-            </a>
-          </div>
-          </div>
-
-        
-
-          <div className="w-full md:w-[30%]">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">كيفية اللعب</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm space-y-4 text-muted-foreground">
-                <p className="leading-relaxed text-foreground/80">
-                  املأ الكلمات المتقاطعة بكتابة الأحرف. استخدم المسافة للتبديل بين الاتجاهات (أفقي/عمودي).
-                </p>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-foreground">التحكم</h3>
-                  <div className="rounded-md border border-border divide-y divide-border overflow-hidden bg-muted/30">
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <span className="font-medium text-foreground">اختر خلية</span>
-                      <span className="text-muted-foreground">انقر على خلية</span>
+                              />
+                            </span>
+                          </p>
+                        </div>
+                      </a>
                     </div>
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <span className="font-medium text-foreground">إدخال حرف</span>
-                      <span className="text-muted-foreground">أحرف عربية</span>
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <span className="font-medium text-foreground">تبديل الاتجاه</span>
-                      <span className="text-muted-foreground">مسافة</span>
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <span className="font-medium text-foreground">التنقل</span>
-                      <span className="text-muted-foreground">مفاتيح الأسهم</span>
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <span className="font-medium text-foreground">مسح حرف</span>
-                      <span className="text-muted-foreground">Backspace / Del</span>
-                    </div>
+                  )}
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-foreground">القرائن</h3>
-                  <div className="md:hidden">
-                    <Tabs defaultValue="across" className="w-full">
-                      <TabsList className="w-full grid grid-cols-2">
-                        <TabsTrigger value="across">أفقي</TabsTrigger>
-                        <TabsTrigger value="down">عمودي</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="across" className="mt-3">
+              {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1">
+                <HowToPlayInstruction 
+                  title={t("games.crossword.howToPlay")} 
+                  text={t("games.crossword.fillCrosswordByTypingLetters")} 
+                  > 
+                  
+                  {/* Controls Card */}
+                  <Card className="mt-4">
+                    <CardHeader>
+                      <CardTitle className="text-lg">{t("games.crossword.controls")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className={`text-sm space-y-2 ${isArabic ? "text-right" : "text-left"}`}>
+                      <div className="rounded-md border border-border divide-y divide-border overflow-hidden">
+                        <div className={`flex items-center justify-between px-3 py-2 ${isArabic ? "flex-row-reverse" : ""}`}>
+                          <span className="font-medium text-foreground">{t("games.crossword.selectCell")}</span>
+                          <span className="text-muted-foreground">{t("games.crossword.clickACell")}</span>
+                        </div>
+                        <div className={`flex items-center justify-between px-3 py-2 ${isArabic ? "flex-row-reverse" : ""}`}>
+                          <span className="font-medium text-foreground">{t("games.crossword.enterALetter")}</span>
+                          <span className="text-muted-foreground">{t("games.crossword.arabicLetters")}</span>
+                        </div>
+                        <div className={`flex items-center justify-between px-3 py-2 ${isArabic ? "flex-row-reverse" : ""}`}>
+                          <span className="font-medium text-foreground">{t("games.crossword.switchDirection")}</span>
+                          <span className="text-muted-foreground">{t("games.crossword.space")}</span>
+                        </div>
+                        <div className={`flex items-center justify-between px-3 py-2 ${isArabic ? "flex-row-reverse" : ""}`}>
+                          <span className="font-medium text-foreground">{t("games.crossword.navigate")}</span>
+                          <span className="text-muted-foreground">{t("games.crossword.arrowKeys")}</span>
+                        </div>
+                        <div className={`flex items-center justify-between px-3 py-2 ${isArabic ? "flex-row-reverse" : ""}`}>
+                          <span className="font-medium text-foreground">{t("games.crossword.clearALetter")}</span>
+                          <span className="text-muted-foreground">{t("games.crossword.backspaceDel")}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                </HowToPlayInstruction>
+                
+                
+
+                {/* Clues Card */}
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{t("games.crossword.clues")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className={`text-sm space-y-2 ${isArabic ? "text-right" : "text-left"}`}>
+                    <div className="md:hidden">
+                      <Tabs defaultValue="across" className="w-full">
+                        <TabsList className="w-full grid grid-cols-2">
+                          <TabsTrigger value="across">{t("games.crossword.across")}</TabsTrigger>
+                          <TabsTrigger value="down">{t("games.crossword.down")}</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="across" className="mt-3">
+                          {renderList(across)}
+                        </TabsContent>
+                        <TabsContent value="down" className="mt-3">
+                          {renderList(down)}
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                    <div className="hidden md:grid md:grid-cols-2 md:gap-4">
+                      <div>
+                        <h4 className="font-medium mb-2">{t("games.crossword.across")}</h4>
                         {renderList(across)}
-                      </TabsContent>
-                      <TabsContent value="down" className="mt-3">
+                      </div>
+                      <div>
+                        <h4 className="font-medium mb-2">{t("games.crossword.down")}</h4>
                         {renderList(down)}
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                  <div className="hidden md:grid md:grid-cols-2 md:gap-4">
-                    <div>
-                      <h4 className="font-medium mb-2">أفقي</h4>
-                      {renderList(across)}
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-medium mb-2">عمودي</h4>
-                      {renderList(down)}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+
+                <MostReadSidebar />
+              </div>
+            </div>
           </div>
         </div>
 
         <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-          <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogContent className="sm:max-w-md" dir={isArabic ? "rtl" : "ltr"}>
             <DialogHeader>
-              <DialogTitle>كيفية لعب الكلمات المتقاطعة</DialogTitle>
+              <DialogTitle>{t("games.crossword.howToPlayCrossword")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p>أكمل الشبكة 10×10 بملء الكلمات من القرائن. هناك ما يصل إلى 10 كلمات؛ 5 أفقية و 5 عمودية. تتقاطع الكلمات حيث تتطابق الأحرف.</p>
+              <p>{t("games.crossword.complete10x10Grid")}</p>
               <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">التسجيل</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm pr-4">
-                  <li>النقاط الأساسية: 1000</li>
-                  <li>العقوبة: -1 لكل ثانية</li>
-                  <li>العقوبة: -50 لكل حرف مساعد؛ كشف الكلمة يكلف أحرف/2 تلميحات</li>
+                <h3 className="font-semibold text-foreground">{t("games.crossword.scoring")}</h3>
+                <ul className={`list-disc list-inside space-y-1 text-sm ${isArabic ? "pr-4" : "pl-4"}`}>
+                  <li>{t("games.crossword.basePoints")}</li>
+                  <li>{t("games.crossword.penaltyPerSecond")}</li>
+                  <li>{t("games.crossword.penaltyPerHint")}</li>
                 </ul>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">نصائح</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm pr-4">
-                  <li>انقر على خلية للاختيار. اضغط على المسافة للتبديل بين الاتجاهات.</li>
-                  <li>استخدم مفاتيح الأسهم للتنقل عبر الشبكة.</li>
-                  <li>استخدم قائمة القرائن؛ كل قرينة يمكن أن ترتبط بالمقال المصدر.</li>
+                <h3 className="font-semibold text-foreground">{t("games.crossword.tips")}</h3>
+                <ul className={`list-disc list-inside space-y-1 text-sm ${isArabic ? "pr-4" : "pl-4"}`}>
+                  <li>{t("games.crossword.clickCellToSelect")}</li>
+                  <li>{t("games.crossword.useArrowKeysToNavigate")}</li>
+                  <li>{t("games.crossword.useCluesList")}</li>
                 </ul>
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={() => setShowInstructions(false)}>فهمت</Button>
+              <Button onClick={() => setShowInstructions(false)}>{t("games.crossword.gotIt")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={showCongratulations} onOpenChange={setShowCongratulations}>
-          <DialogContent dir="rtl">
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
             <DialogHeader>
               <DialogTitle>
                 <div className="flex items-center gap-2">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span>أحسنت!</span>
+                  <span>{t("games.crossword.wellDone")}</span>
                 </div>
               </DialogTitle>
-              <DialogDescription>لقد حللت الكلمات المتقاطعة!</DialogDescription>
+              <DialogDescription>{t("games.crossword.youSolvedTheCrossword")}</DialogDescription>
             </DialogHeader>
             <div className="flex justify-center py-4">
               <div className="bg-muted/50 rounded-lg p-4 w-full max-w-xs">
                 <div className="text-center space-y-2">
-                  <div className="text-sm text-muted-foreground">الوقت</div>
+                  <div className="text-sm text-muted-foreground">{t("games.crossword.time")}</div>
                   <div className="font-medium">{formatTime(timer)}</div>
                   <Separator />
-                  <div className="text-sm text-muted-foreground">التلميحات المستخدمة</div>
+                  <div className="text-sm text-muted-foreground">{t("games.crossword.hintsUsed")}</div>
                   <div className="font-medium">{hintsUsed}</div>
                 </div>
               </div>
             </div>
-            <DialogFooter className="flex-row-reverse">
+            <DialogFooter className={isArabic ? "flex-row-reverse" : "flex-row"}>
               <Button onClick={() => {
                 setShowCongratulations(false);
                 resetGame(false); // Reset current game, don't advance
-              }}>لغز جديد</Button>
+              }}>{t("games.crossword.newPuzzle")}</Button>
               <Button
                 variant="outline"
-                className="ml-2"
+                className={isArabic ? "ml-2" : "mr-2"}
                 onClick={() =>
                   navigate(
                     `/games/leaderboard?${new URLSearchParams({
-                      name: "Crossword",
+                      name: t("games.crossword.name"),
                       duration: "month",
                       game_type: GAME_TYPE,
                       top_k: "10",
@@ -774,57 +908,55 @@ const Crossword: React.FC<CrosswordProps> = ({ games, gameId }) => {
                   )
                 }
               >
-                لوحة المتصدرين
+                {t("games.crossword.leaderboard")}
               </Button>
-              <Button onClick={moveToNextPuzzle} className="ml-2">
-                اللغز التالي
+              <Button onClick={moveToNextPuzzle} className={isArabic ? "ml-2" : "mr-2"}>
+                {t("games.crossword.nextPuzzle")}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={showRevealConfirm} onOpenChange={setShowRevealConfirm}>
-          <DialogContent dir="rtl">
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
             <DialogHeader>
-              <DialogTitle>إظهار الحل الكامل؟</DialogTitle>
+              <DialogTitle>{t("games.crossword.revealFullSolutionQuestion")}</DialogTitle>
               <DialogDescription>
-                هل أنت متأكد أنك تريد إظهار الحل الكامل؟ لن يتم تسجيل نتيجتك إذا قمت بذلك.
+                {t("games.crossword.areYouSureRevealSolution")}
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="flex-row-reverse">
+            <DialogFooter className={isArabic ? "flex-row-reverse" : "flex-row"}>
               <Button
                 variant="destructive"
                 onClick={revealFullSolution}
               >
-                نعم، أظهر الحل
+                {t("games.crossword.yesRevealSolution")}
               </Button>
-              <Button variant="outline" onClick={() => setShowRevealConfirm(false)}>إلغاء</Button>
+              <Button variant="outline" onClick={() => setShowRevealConfirm(false)}>{t("games.crossword.cancel")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* New Dialog for Solution Revealed */}
         <Dialog open={showSolutionRevealedDialog} onOpenChange={setShowSolutionRevealedDialog}>
-          <DialogContent dir="rtl">
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
             <DialogHeader>
-              <DialogTitle>تم عرض الحل!</DialogTitle>
+              <DialogTitle>{t("games.crossword.solutionRevealed")}</DialogTitle>
               <DialogDescription>
-                لقد تم عرض الحل الكامل للغز. يمكنك الآن مراجعة اللغز أو الانتقال إلى اللغز التالي.
+                {t("games.crossword.fullSolutionRevealed")}
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="flex-row-reverse">
+            <DialogFooter className={isArabic ? "flex-row-reverse" : "flex-row"}>
               <Button onClick={admirePuzzle}>
-                مراجعة اللغز
+                {t("games.crossword.reviewPuzzle")}
               </Button>
               <Button variant="outline" onClick={moveToNextPuzzle}>
-                اللغز التالي
+                {t("games.crossword.nextPuzzle")}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-      </div>
-    </div>
+    </section>
   );
 };
 

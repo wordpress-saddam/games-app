@@ -26,8 +26,14 @@ import GamesServices from "../../../v2-services/games-service";
 import { useUser } from "../../context/UserContext";
 import LeaderboardModal from "./LeaderboardModal";
 import { useTranslation } from "react-i18next";
-import { formatNumberForDisplay } from "../../utils/numberFormatter";
 import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import FlappyBirdImage from "../../assets/Flappy.jpg";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import { LightButton } from "../../components/ui/GamesButton";
 
 declare global {
   interface Window {
@@ -36,7 +42,8 @@ declare global {
 }
 
 const FlappyBirdGame = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const { user } = useUser();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -502,9 +509,9 @@ const isIPad = /iPad/.test(navigator.userAgent) ||
         ctx.fillText(t("games.skyHopper.gameOver"), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 50);
 
         ctx.font = "24px sans-serif";
-        ctx.fillText(`${t("common.score")}: ${formatNumberForDisplay(score)}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+        ctx.fillText(`${t("common.score")}: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
         ctx.fillText(
-          `${t("games.skyHopper.best")} ${formatNumberForDisplay(Math.max(score, highScore))}`,
+          `${t("games.skyHopper.best")} ${Math.max(score, highScore)}`,
           CANVAS_WIDTH / 2,
           CANVAS_HEIGHT / 2 + 40
         );
@@ -654,18 +661,18 @@ const isIPad = /iPad/.test(navigator.userAgent) ||
     handleJump();
   }, [handleJump]);
 
-  const params = new URLSearchParams({
-    name: "Sky Hopper",
+  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+    name: t("games.skyHopper.name"),
     duration: "month",
     game_type: "sky-hopper",
     top_k: "10",
     sort_order: "desc",
     score_type: "max",
-  });
+  }).toString()}`;
 
   const handleLeaderBoard = () => {
     if (gameOver || score == 0) {
-      navigate(`/games/leaderboard?${params.toString()}`);
+      navigate(leaderboardUrl);
     } else {
       setPaused(true);
       setDialog(true);
@@ -679,62 +686,61 @@ const isIPad = /iPad/.test(navigator.userAgent) ||
 
   return (
     <Layout>
-      <div className="game-area">
-        <div className="game-container">
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h1 className="text-2xl md:text-3xl font-bold">{t("games.skyHopper.name")}</h1>
-              {!user?.isAnonymous && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleLeaderBoard}
-                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-                    aria-label={t("common.leaderboard")}
-                  >
-                    <Trophy size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("common.leaderboard")}</TooltipContent>
-              </Tooltip>
-              )}
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full md:w-[70%]">
-              <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-                <div className="flex items-center gap-2">
-                  {!isMobile && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={togglePause}
-                      disabled={!gameStarted || gameOver}
-                    >
-                      {paused ? t("common.resume") : t("common.pause")}
-                    </Button>
-                  )}
-
-                  <Button variant="outline" size="sm" onClick={toggleMute}>
-                    {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                    {muted ? t("games.skyHopper.unmute") : t("games.skyHopper.mute")}
-                  </Button>
-
-                  <Button variant="outline" size="sm">
-                    {t("common.score")}: {formatNumberForDisplay(score)}
-                  </Button>
+      <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
+        <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+          <div className="game-container3" translate="no">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+              {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                {/* Header Section */}
+                <div className="mb-6" translate="no">
+                  <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                    <div className="flex items-center gap-2">
+                      <img src={FlappyBirdImage} alt="Flappy Bird Logo" className="w-20 h-20" />
+                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.skyHopper.name")}</h2>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Leaderboard Button */}
+                      {!user?.isAnonymous && (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+                      )}
+                      {/* Back to Home Button */}
+                      <BackToHome text={t("common.backToHome")} />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowInstructions(true)}
-                    className="bg-muted flex items-center gap-2"
-                  >
-                    <HelpCircle className="mr-1 h-4 w-4" /> {t("common.help")}
-                  </Button>
-                </div>
-              </div>
+
+                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Help Button */}
+                      <LightButton onClick={() => setShowInstructions(true)}>
+                        <HelpCircle className="h-4 w-4" />
+                        {t("common.help")}
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Pause Button (Desktop only) */}
+                      {!isMobile && (
+                        <LightButton onClick={togglePause} disabled={!gameStarted || gameOver}>
+                          {paused ? t("common.resume") : t("common.pause")}
+                        </LightButton>
+                      )}
+                      {/* Mute Button */}
+                      <LightButton onClick={toggleMute}>
+                        {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                        {muted ? t("games.skyHopper.unmute") : t("games.skyHopper.mute")}
+                      </LightButton>
+                      {/* Score Button */}
+                      <LightButton>
+                        {t("common.score")}: {score}
+                      </LightButton>
+                    </div>
+                  </div>
 
               <div className="flex justify-center items-center pt-2">
                 <div className="w-full max-w-md bg-background border border-border rounded-lg overflow-hidden shadow-xl text-center">
@@ -769,15 +775,16 @@ const isIPad = /iPad/.test(navigator.userAgent) ||
                   </div>
                 </div>
               </div>
-            </div>
+                </div>
+              </div>
 
-            <div className="w-full md:w-[30%]">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t("common.howToPlay")}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <div className="space-y-4 text-muted-foreground">
+              {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1">
+                <HowToPlayInstruction 
+                  title={t("common.howToPlay")}
+                  text=""
+                >
+                  <div className="text-[16px] space-y-3 text-white">
                     <p>
                       {isMobile 
                         ? t("games.skyHopper.tapTheScreenToMakeTheBirdFlyUpward")
@@ -785,9 +792,9 @@ const isIPad = /iPad/.test(navigator.userAgent) ||
                       } {t("games.skyHopper.avoidTheGreenPipesAndDontHitTheGround")}
                     </p>
                     {!isMobile && (
-                      <div className="bg-muted p-3 rounded-md">
-                        <h4 className="font-medium mb-2">{t("games.skyHopper.controls")}</h4>
-                        <ul className="space-y-1 text-sm">
+                      <div className="bg-white/10 p-3 rounded-md">
+                        <h4 className="font-medium mb-2 text-white">{t("games.skyHopper.controls")}</h4>
+                        <ul className="space-y-1 text-sm text-white">
                           <li>
                             • <span className="font-medium">{t("games.skyHopper.spaceMakeTheBirdFly")}</span>
                           </li>
@@ -804,88 +811,89 @@ const isIPad = /iPad/.test(navigator.userAgent) ||
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </HowToPlayInstruction>
+                <MostReadSidebar />
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Instructions Dialog */}
         <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-          <DialogContent>
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
             <DialogHeader>
-              <DialogTitle>{t("games.skyHopper.howToPlaySkyHopper")}</DialogTitle>
+            <DialogTitle>{t("games.skyHopper.howToPlaySkyHopper")}</DialogTitle>
+            <DialogDescription>
+              <div className="space-y-4 mt-4">
+                <p>
+                  {isMobile 
+                    ? t("games.skyHopper.tapTheScreenToMakeTheBirdFlyUpward")
+                    : t("games.skyHopper.tapTheScreenOrPressTheSpaceBarToMakeTheBirdFlyUpward")
+                  } {t("games.skyHopper.avoidTheGreenPipesAndDontHitTheGround")}
+                </p>
+
+                {!isMobile && (
+                  <div className="bg-muted p-3 rounded-md">
+                    <h4 className="font-medium mb-2">{t("games.skyHopper.controls")}</h4>
+                    <ul className="space-y-1 text-sm">
+                      <li>
+                        • <span className="font-medium">{t("games.skyHopper.spaceMakeTheBirdFly")}</span>
+                      </li>
+                      <li>
+                        • <span className="font-medium">{t("games.skyHopper.pPauseTheGame")}</span>
+                      </li>
+                      <li>
+                        • <span className="font-medium">{t("games.skyHopper.rRestartTheGame")}</span>
+                      </li>
+                      <li>
+                        • <span className="font-medium">{t("games.skyHopper.mToggleSound")}</span>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowInstructions(false)}>{t("common.gotIt")}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={dialog} onOpenChange={setDialog}>
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
+            <DialogHeader>
+              <DialogTitle>{t("common.leaveGame")}</DialogTitle>
               <DialogDescription>
                 <div className="space-y-4 mt-4">
-                  <p>
-                    {isMobile 
-                      ? t("games.skyHopper.tapTheScreenToMakeTheBirdFlyUpward")
-                      : t("games.skyHopper.tapTheScreenOrPressTheSpaceBarToMakeTheBirdFlyUpward")
-                    } {t("games.skyHopper.avoidTheGreenPipesAndDontHitTheGround")}
+                  <p className="text-muted-foreground mb-4">
+                    {t("common.areYouSureYouWantToLeaveTheGameYourProgressWillBeLost")}
                   </p>
-
-                  {!isMobile && (
-                    <div className="bg-muted p-3 rounded-md">
-                      <h4 className="font-medium mb-2">{t("games.skyHopper.controls")}</h4>
-                      <ul className="space-y-1 text-sm">
-                        <li>
-                          • <span className="font-medium">{t("games.skyHopper.spaceMakeTheBirdFly")}</span>
-                        </li>
-                        <li>
-                          • <span className="font-medium">{t("games.skyHopper.pPauseTheGame")}</span>
-                        </li>
-                        <li>
-                          • <span className="font-medium">{t("games.skyHopper.rRestartTheGame")}</span>
-                        </li>
-                        <li>
-                          • <span className="font-medium">{t("games.skyHopper.mToggleSound")}</span>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
-              <Button onClick={() => setShowInstructions(false)}>{t("common.gotIt")}</Button>
+            <DialogFooter className="flex justify-end gap-2">
+              <Button
+                onClick={() => {
+                  setDialog(false);
+                  setPaused(false);
+                }}
+              >
+                {t("common.noResume")}
+              </Button>
+              <Button
+                className="bg-gray-500"
+                onClick={() => {
+                  setDialog(false);
+                  navigate(leaderboardUrl);
+                }}
+              >
+                {t("common.yesLeave")}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
-
-      <Dialog open={dialog} onOpenChange={setDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("common.leaveGame")}</DialogTitle>
-            <DialogDescription>
-              <div className="space-y-4 mt-4">
-                <p className="text-muted-foreground mb-4">
-                  {t("common.areYouSureYouWantToLeaveTheGameYourProgressWillBeLost")}
-                </p>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button
-              onClick={() => {
-                setDialog(false);
-                setPaused(false);
-              }}
-            >
-              {t("common.noResume")}
-            </Button>
-            <Button
-              className="bg-gray-500"
-              onClick={() => {
-                setDialog(false);
-                navigate(`/games/leaderboard?${params.toString()}`);
-              }}
-            >
-              {t("common.yesLeave")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </section>
     </Layout>
   );
 };

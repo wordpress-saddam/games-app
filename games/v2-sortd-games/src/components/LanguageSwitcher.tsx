@@ -17,7 +17,7 @@ const LanguageSwitcher: React.FC = () => {
       onClick={toggleLanguage}
       variant="outline"
       size="sm"
-      className="flex items-center gap-2"
+      className="flex items-center gap-1"
       aria-label={`Switch to ${i18n.language === 'en' ? 'Arabic' : 'English'}`}
     >
       <Languages size={16} />

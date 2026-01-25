@@ -28,11 +28,19 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import SudokuImage from "../../assets/tile-merge.png";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import { LightButton, BlueButton, ResetButton } from "../../components/ui/GamesButton";
 
 type Difficulty = "easy" | "medium" | "hard" | "expert";
 
 const SudokuGame = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const { user } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
@@ -150,8 +158,19 @@ const SudokuGame = () => {
     const { t } = useTranslation();
     return (
       <div className="flex items-center justify-between px-3 py-2">
+        <span className="font-medium text-white">{action}</span>
+        <span className="text-white/80">{keyHint}</span>
+      </div>
+    );
+  };
+
+   // Small presentational helper to align instruction rows
+   const ControlRowBlack = ({ action, keyHint }: { action: React.ReactNode; keyHint: React.ReactNode }) => {
+    const { t } = useTranslation();
+    return (
+      <div className="flex items-center justify-between px-3 py-2">
         <span className="font-medium text-foreground">{action}</span>
-        <span className="text-muted-foreground">{keyHint}</span>
+        <span className="text-foreground/70">{keyHint}</span>
       </div>
     );
   };
@@ -608,7 +627,7 @@ const SudokuGame = () => {
 
     // Cell is selected
     if (selectedCell && selectedCell[0] === row && selectedCell[1] === col) {
-      return "bg-primary/10 shadow-inner border-primary";
+      return "bg-primary/10 shadow-inner border-[#63AAE4]";
     }
 
     // Highlighted cell
@@ -621,26 +640,22 @@ const SudokuGame = () => {
     return isAltSubgrid ? "bg-muted/20" : "";
   };
 
-  const params = useMemo(
-    () =>
-      new URLSearchParams({
-        name: "Sudoku",
-        duration: "month",
-        game_type: "sudoku",
-        top_k: "10",
-        sort_order: "asc",
-        score_type: "min",
-      }),
-    []
-  );
+  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+    name: t("games.sudoku.name"),
+    duration: "month",
+    game_type: "sudoku",
+    top_k: "10",
+    sort_order: "asc",
+    score_type: "min",
+  }).toString()}`;
 
   const handleLeaderBoard = useCallback(() => {
     if (showCongratulations || gameCompleted) {
-      navigate(`/games/leaderboard?${params.toString()}`);
+      navigate(leaderboardUrl);
     } else {
       setDialog(true);
     }
-  }, [showCongratulations, gameCompleted, navigate, params]);
+  }, [showCongratulations, gameCompleted, navigate, leaderboardUrl]);
 
   if (!user) {
     navigate("/");
@@ -648,201 +663,202 @@ const SudokuGame = () => {
 
   return (
     <Layout>
-      <div className="game-area" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
-        {showCelebration && (
-          <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
-            <div className="absolute inset-0 celebration-container">
-              {/* Confetti particles with staggered timing */}
-              {[...Array(30)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute confetti-card"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: '-20px',
-                    animationDelay: `${Math.random() * 1.5}s`,
-                    animationDuration: `${3 + Math.random() * 2}s`,
-                  }}
-                >
+      <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
+        <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+          {showCelebration && (
+            <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+              <div className="absolute inset-0 celebration-container">
+                {/* Confetti particles with staggered timing */}
+                {[...Array(30)].map((_, i) => (
                   <div
-                    className="w-4 h-6 rounded-sm shadow-lg transform rotate-45"
+                    key={i}
+                    className="absolute confetti-card"
                     style={{
-                      backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#fdcb6e', '#6c5ce7'][Math.floor(Math.random() * 8)]
+                      left: `${Math.random() * 100}%`,
+                      top: '-20px',
+                      animationDelay: `${Math.random() * 1.5}s`,
+                      animationDuration: `${3 + Math.random() * 2}s`,
                     }}
-                  />
-                </div>
-              ))}
-
-              {/* Celebration text overlay */}
-
-            </div>
-          </div>
-        )}
-
-        <div className="game-container">
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h1 className="text-2xl md:text-3xl font-bold">
-                {t("games.sudoku.name")}
-              </h1>
-              {!user?.isAnonymous && (
-              <Button
-                onClick={handleLeaderBoard}
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span aria-label={t("common.leaderboard")}>
-                      <Trophy size={18} />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("common.leaderboard")}</TooltipContent>
-                </Tooltip>
-              </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full md:w-[70%]">
-              <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowDifficulty(true)}
                   >
-                    <Settings className="mr-1 h-4 w-4" />
-                    {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={resetGame}>
-                    <RefreshCw className="mr-1 h-4 w-4" /> {t("common.reset")}
-                  </Button>
-
-                  <div className="flex items-center gap-1 bg-background rounded-md px-4 py-1 text-sm font-medium border border-border min-w-fit">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatTime(time)}</span>
+                    <div
+                      className="w-4 h-6 rounded-sm shadow-lg transform rotate-45"
+                      style={{
+                        backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#fdcb6e', '#6c5ce7'][Math.floor(Math.random() * 8)]
+                      }}
+                    />
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowInstructions(true)}
-                    className="bg-muted flex items-center gap-2"
-                  >
-                    <HelpCircle className="mr-1 h-4 w-4" /> {t("common.help")}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Sudoku board */}
-              <div className="p-4 flex justify-center">
-                <div className="bg-card border border-border inline-grid grid-cols-9 gap-0 overflow-hidden shadow-md" dir="ltr">
-                  {Array.from({ length: 9 }).map((_, row) =>
-                    Array.from({ length: 9 }).map((_, col) => (
-                      <div
-                        key={`${row}-${col}`}
-                        className={`
-                          w-8 h-8 sm:w-11 sm:h-11 flex items-center justify-center text-base font-medium 
-                          border border-border dark:border-white/10 cursor-pointer select-none
-                          ${getCellBackgroundClass(row, col)}
-                          ${(row + 1) % 3 === 0 && row < 8 ? "border-b-[4px]" : ""}
-                          ${(col + 1) % 3 === 0 && col < 8 ? "border-r-[4px]" : ""}
-                          ${row % 3 === 0 ? "border-t-[4px]" : ""}
-                          ${col % 3 === 0 ? "border-l-[4px]" : ""}
-                        `}
-                        onClick={() => handleCellClick(row, col)}
-                      >
-                        {board[row][col] > 0
-                          ? board[row][col]
-                          : notes[row][col].length > 0 && (
-                            <div className="grid grid-cols-3 gap-0 w-full h-full p-0.5">
-                              {Array.from({ length: 9 }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="flex items-center justify-center"
-                                >
-                                  <span
-                                    className={`text-[8px] ${notes[row][col].includes(i + 1)
-                                        ? "text-muted-foreground"
-                                        : "text-transparent"
-                                      }`}
-                                  >
-                                    {i + 1}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Number input pad */}
-              <div className="p-4 flex justify-center">
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <Button
-                      key={i}
-                      variant="outline"
-                      className={`w-12 h-12 text-lg font-bold ${noteMode ? "border-primary/50" : ""
-                        }`}
-                      onClick={() => handleNumberInput(i + 1)}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-12 h-12 text-lg font-bold text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900/40 dark:hover:bg-red-900/20"
-                        onClick={() => handleNumberInput(0)}
-                        aria-label={t("accessibility.clearCell")}
-                        title={t("accessibility.clearCell")}
-                      >
-                        <Delete className="w-5 h-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t("accessibility.clearCell")}</TooltipContent>
-                  </Tooltip>
-                </div>
+                ))}
               </div>
             </div>
+          )}
 
-            <div className="w-full md:w-[30%]">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t("common.howToPlay")}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-4 text-muted-foreground" dir="ltr">
-                  <p className="leading-relaxed text-foreground/80">
-                    {t("games.sudoku.fillInTheGridSoThatEveryRowAndColumnContainsTheDigits1Through9")}
-                  </p>
-                  <p className="leading-relaxed text-foreground/80">
-                    {t("games.sudoku.numbersCantRepeatInAnyRowOrColumn")}
-                  </p>
-                  <p className="leading-relaxed text-foreground/80">
-                    {t("games.sudoku.redColorInTheBackgroundIndicatesThatAWrongNumberHasBeenFilled")}
-                  </p>
-                  <div className="pt-2">
-                    <h3 className="font-semibold text-foreground mb-2">{t("games.sudoku.controls")}</h3>
-                    <div className="rounded-md border border-border divide-y divide-border overflow-hidden bg-muted/30">
-                      <ControlRow action={t("games.sudoku.selectCell")} keyHint={t("games.sudoku.clickACell")} />
-                      <ControlRow action={t("games.sudoku.enterANumber")} keyHint={t("games.sudoku.keys19")} />
-                      <ControlRow action={t("games.sudoku.clearACell")} keyHint={t("games.sudoku.delBackspace")} />
-                      <ControlRow action={t("games.sudoku.navigateCells")} keyHint={t("games.sudoku.arrowKeys")} />
-                      <ControlRow action={t("games.sudoku.toggleNotesMode")} keyHint={t("games.sudoku.nKey")} />
+          <div className="game-container3" translate="no">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+              {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                {/* Header Section */}
+                <div className="mb-6" translate="no">
+                  <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                    <div className="flex items-center gap-2">
+                      <img src={SudokuImage} alt="Sudoku Logo" className="w-20 h-20" />
+                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.sudoku.name")}</h2>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Leaderboard Button */}
+                      {!user?.isAnonymous && (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+                      )}
+                      {/* Back to Home Button */}
+                      <BackToHome text={t("common.backToHome")} />
                     </div>
                   </div>
-                </CardContent>
+                </div>
 
-              </Card>
+                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Difficulty Button */}
+                      <BlueButton onClick={() => setShowDifficulty(true)}>
+                        {t(`games.sudoku.${difficulty}`)}
+                        <Settings className="h-4 w-4" />
+                      </BlueButton>
+                      {/* Help Button */}
+                      <LightButton onClick={() => setShowInstructions(true)}>
+                        {t("common.help")}
+                        <HelpCircle className="h-4 w-4" />
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Timer Button */}
+                      <LightButton>
+                        {formatTime(time)}
+                        <Clock className="h-4 w-4" />
+                      </LightButton>
+                      {/* Reset Button */}
+                      <LightButton onClick={resetGame}>
+                        {t("common.reset")}
+                        <RefreshCw className="h-4 w-4" />
+                      </LightButton>
+                    </div>
+                  </div>
+
+                  {/* Sudoku board */}
+                  <div className="p-4 flex justify-center">
+                    <div className="bg-card border border-border inline-grid grid-cols-9 gap-0 overflow-hidden shadow-md" dir="ltr">
+                      {Array.from({ length: 9 }).map((_, row) =>
+                        Array.from({ length: 9 }).map((_, col) => (
+                          <div
+                            key={`${row}-${col}`}
+                            className={`
+                              w-8 h-8 sm:w-11 sm:h-11 flex items-center justify-center text-base font-medium 
+                              border border-border dark:border-white/10 cursor-pointer select-none
+                              ${getCellBackgroundClass(row, col)}
+                              ${(row + 1) % 3 === 0 && row < 8 ? "border-b-[4px]" : ""}
+                              ${(col + 1) % 3 === 0 && col < 8 ? "border-r-[4px]" : ""}
+                              ${row % 3 === 0 ? "border-t-[4px]" : ""}
+                              ${col % 3 === 0 ? "border-l-[4px]" : ""}
+                            `}
+                            onClick={() => handleCellClick(row, col)}
+                          >
+                            {board[row][col] > 0
+                              ? board[row][col]
+                              : notes[row][col].length > 0 && (
+                                <div className="grid grid-cols-3 gap-0 w-full h-full p-0.5">
+                                  {Array.from({ length: 9 }).map((_, i) => (
+                                    <div
+                                      key={i}
+                                      className="flex items-center justify-center"
+                                    >
+                                      <span
+                                        className={`text-[8px] ${notes[row][col].includes(i + 1)
+                                            ? "text-muted-foreground"
+                                            : "text-transparent"
+                                          }`}
+                                      >
+                                        {i + 1}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Number input pad */}
+                  <div className="p-4 flex justify-center">
+                    <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                      {Array.from({ length: 9 }).map((_, i) => (
+                        <Button
+                          key={i}
+                          variant="outline"
+                          className={`w-12 h-12 text-lg font-bold ${noteMode ? "border-primary/50" : ""
+                            }`}
+                          onClick={() => handleNumberInput(i + 1)}
+                        >
+                          {i + 1}
+                        </Button>
+                      ))}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-12 h-12 text-lg font-bold text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900/40 dark:hover:bg-red-900/20"
+                            onClick={() => handleNumberInput(0)}
+                            aria-label={t("accessibility.clearCell")}
+                            title={t("accessibility.clearCell")}
+                          >
+                            <Delete className="w-5 h-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("accessibility.clearCell")}</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            
+              
+
+              {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1">
+                <HowToPlayInstruction 
+                  title={t("games.sudoku.howToPlayNumbersudoku") || t("common.howToPlay")}
+                  text=""
+                >
+                  <div className="text-[16px] space-y-3 text-white">
+                    <p className="leading-relaxed">
+                      {t("games.sudoku.fillInTheGridSoThatEveryRowAndColumnContainsTheDigits1Through9")}
+                    </p>
+                    <p className="leading-relaxed">
+                      {t("games.sudoku.numbersCantRepeatInAnyRowOrColumn")}
+                    </p>
+                    <p className="leading-relaxed">
+                      {t("games.sudoku.redColorInTheBackgroundIndicatesThatAWrongNumberHasBeenFilled")}
+                    </p>
+                    <div className="pt-2">
+                      <h3 className="font-semibold mb-2 text-white">{t("games.sudoku.controls")}</h3>
+                      <div className="rounded-md border border-white/30 divide-y divide-white/30 overflow-hidden bg-white/10">
+                        <ControlRow action={t("games.sudoku.selectCell")} keyHint={t("games.sudoku.clickACell")} />
+                        <ControlRow action={t("games.sudoku.enterANumber")} keyHint={t("games.sudoku.keys19")} />
+                        <ControlRow action={t("games.sudoku.clearACell")} keyHint={t("games.sudoku.delBackspace")} />
+                        <ControlRow action={t("games.sudoku.navigateCells")} keyHint={t("games.sudoku.arrowKeys")} />
+                        <ControlRow action={t("games.sudoku.toggleNotesMode")} keyHint={t("games.sudoku.nKey")} />
+                      </div>
+                    </div>
+                  </div>
+                </HowToPlayInstruction>
+                <MostReadSidebar />
+              </div>
             </div>
           </div>
+        </div>
 
           {/* Difficulty selection dialog */}
           <Dialog open={showDifficulty} onOpenChange={setShowDifficulty}>
@@ -906,9 +922,9 @@ const SudokuGame = () => {
             </DialogContent>
           </Dialog>
 
-          {/* How to play dialog */}
-          <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-            <DialogContent className="sm:max-w-md" dir="ltr">
+        {/* How to play dialog */}
+        <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
+          <DialogContent className="sm:max-w-md" dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>{t("games.sudoku.howToPlayNumbersudoku")}</DialogTitle>
               </DialogHeader>
@@ -923,11 +939,11 @@ const SudokuGame = () => {
                 <div className="space-y-2">
                   <h3 className="font-semibold text-foreground">{t("games.sudoku.controls")}</h3>
                   <div className="rounded-md border border-border divide-y divide-border overflow-hidden bg-muted/30">
-                    <ControlRow action={t("games.sudoku.selectCell")} keyHint={t("games.sudoku.clickACell")} />
-                    <ControlRow action={t("games.sudoku.enterANumber")} keyHint={t("games.sudoku.keys19")} />
-                    <ControlRow action={t("games.sudoku.clearACell")} keyHint={t("games.sudoku.delBackspace")} />
-                    <ControlRow action={t("games.sudoku.navigateCells")} keyHint={t("games.sudoku.arrowKeys")} />
-                    <ControlRow action={t("games.sudoku.toggleNotesMode")} keyHint={t("games.sudoku.nKey")} />
+                    <ControlRowBlack action={t("games.sudoku.selectCell")} keyHint={t("games.sudoku.clickACell")} />
+                    <ControlRowBlack action={t("games.sudoku.enterANumber")} keyHint={t("games.sudoku.keys19")} />
+                    <ControlRowBlack action={t("games.sudoku.clearACell")} keyHint={t("games.sudoku.delBackspace")} />
+                    <ControlRowBlack action={t("games.sudoku.navigateCells")} keyHint={t("games.sudoku.arrowKeys")} />
+                    <ControlRowBlack action={t("games.sudoku.toggleNotesMode")} keyHint={t("games.sudoku.nKey")} />
                   </div>
                 </div>
 
@@ -950,12 +966,12 @@ const SudokuGame = () => {
 
           </Dialog>
 
-          {/* Congratulations dialog */}
-          <Dialog
-            open={showCongratulations}
-            onOpenChange={setShowCongratulations}
-          >
-            <DialogContent>
+        {/* Congratulations dialog */}
+        <Dialog
+          open={showCongratulations}
+          onOpenChange={setShowCongratulations}
+        >
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>
                   <div className="flex items-center gap-2">
@@ -1006,8 +1022,8 @@ const SudokuGame = () => {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={dialog} onOpenChange={setDialog}>
-            <DialogContent>
+        <Dialog open={dialog} onOpenChange={setDialog}>
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
               <DialogHeader>
                 <DialogTitle>{t("common.leaveGame")}</DialogTitle>
                 <DialogDescription>
@@ -1024,7 +1040,7 @@ const SudokuGame = () => {
                   className="bg-gray-500"
                   onClick={() => {
                     setDialog(false);
-                    navigate(`/games/leaderboard?${params.toString()}`);
+                    navigate(leaderboardUrl);
                   }}
                 >
                   {t("common.yesLeave")}
@@ -1032,8 +1048,7 @@ const SudokuGame = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+      </section>
     </Layout>
   );
 };

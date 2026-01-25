@@ -1,8 +1,10 @@
 import GamesServices from "../../v2-services/games-service";
 export interface ContinueGameData {
   id: string;
-  title: string;
-  description?: string;
+  title?: string; // Optional: fallback if titleKey is not available
+  description?: string; // Optional: fallback if descriptionKey is not available
+  titleKey?: string; // Translation key for title (e.g., "games.xox.name")
+  descriptionKey?: string; // Translation key for description (e.g., "games.xox.description")
   imageUrl?: string;
   gameType: 'dynamic' | 'static';
   lastPlayed: string;

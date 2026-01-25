@@ -8,6 +8,7 @@ import Layout from "../../components/Layout";
 import { useTranslation } from "react-i18next";
 import {
   Trophy,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -21,6 +22,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import Game2048Image from "../../assets/tile-merge.png";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import { LightButton, ResetButtonTopRounded, UndoButtonTopRounded } from "../../components/ui/GamesButton";
 
 // Types and Constants
 type Direction = "up" | "right" | "down" | "left";
@@ -59,7 +67,8 @@ const TEXT_COLORS: Record<number, string> = {
 };
 
 const Game2048 = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const navigate = useNavigate();
   const { user } = useUser();
   const location = useLocation();
@@ -68,6 +77,7 @@ const Game2048 = () => {
   const [bestScore, setBestScore] = useState<number>(0);
   const [gameState, setGameState] = useState<GameState>("playing");
   const [dialog, setDialog] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [moveHistory, setMoveHistory] = useState<
     { grid: Grid; score: number }[]
   >([]);
@@ -82,13 +92,13 @@ const Game2048 = () => {
     ? `${window.location.protocol}//${window.location.host}` 
     : "https://asharqgames-uat.sortd.pro";
   const gameUrl = `${baseUrl}${location.pathname}${location.search ? location.search : ""}`;
-  const gameName = "2048";
+  const gameName = t("games.tileMerge.name");
   
   useGameSchema(
     {
       name: gameName,
       headline: `${gameName} - Asharq Games`,
-      description: "Play 2048 to test your logic skills!",
+      description: t("games.tileMerge.schemaDescription"),
       url: gameUrl,
       image: `${baseUrl}/assets/2048.jpg`,
       isAccessibleForFree: true,
@@ -311,9 +321,9 @@ const Game2048 = () => {
       if (checkWin(newGrid)) {
         setGameState("won");
         toast({
-          title: "You Win!",
+          title: t("common.youWon"),
           className: "bg-green-500 text-white font-semibold border-none shadow-xl",
-          description: `You reached the 2048 tile with a score of ${newScore}!`,
+          description: t("games.tileMerge.youReached2048TileWithScore", { score: newScore }),
           variant: "default",
         });
         // Insert score when game is won
@@ -324,9 +334,9 @@ const Game2048 = () => {
       if (checkGameOver(newGrid)) {
         setGameState("lost");
         toast({
-          title: "Game Over!",
+          title: t("common.gameOver"),
           className: "bg-red-500 text-white font-semibold border-none shadow-xl",
-          description: `No more moves available. Final score: ${newScore}`,
+          description: t("games.tileMerge.noMoreMovesAvailableFinalScore", { score: newScore }),
           variant: "destructive",
         });
         // Insert score when game is lost
@@ -480,8 +490,8 @@ const Game2048 = () => {
 
   // Get font size based on tile value
   const getTileFontSize = (value: number) => {
-    if (value < 100) return 'text-xl sm:text-2xl';
-    if (value < 1000) return 'text-lg sm:text-xl';
+    if (value < 100) return 'text-2xl sm:text-4xl';
+    if (value < 1000) return 'text-2xl sm:text-4xl';
     return 'text-base sm:text-lg';
   };
 
@@ -492,14 +502,14 @@ const Game2048 = () => {
     }
   };
 
-  const params = new URLSearchParams({
-    name: "Tile Merge Puzzle",
+  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+    name: t("games.tileMerge.name"),
     duration: "month",
     game_type: "tile-merge",
     top_k: "10",
     sort_order: "desc",
     score_type: "max",
-  });
+  }).toString()}`;
 
   const handleLeaderBoard = () => {
     // Check if game is currently being played (not just if there's a score)
@@ -510,7 +520,7 @@ const Game2048 = () => {
       setDialog(true);
     } else {
       // Go directly to leaderboard if no active game
-      navigate(`/games/leaderboard?${params.toString()}`);
+      navigate(leaderboardUrl);
     }
   };
 
@@ -519,63 +529,71 @@ const Game2048 = () => {
       insertGameScore(bestScore);
     }
     setDialog(false);
-    navigate(`/games/leaderboard?${params.toString()}`);
+    navigate(leaderboardUrl);
   };
 
   return (
     <Layout>
-      <div className="game-area">
-        <div className="game-container">
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h1 className="text-2xl md:text-3xl font-bold">{t("games.tileMerge.name")}</h1>
-              {!user?.isAnonymous && (
-              <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleLeaderBoard}
-                      className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-                      aria-label={t("accessibility.leaderboard")}
-                    >
-                      <Trophy size={18} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("common.leaderboard")}</TooltipContent>
-                </Tooltip>
-              </div>
-              )}
-            </div>
-          </div>
-         
-          <div className="flex flex-col lg:flex-row w-full gap-4">
-            <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full lg:w-[70%]">
-              <div className="bg-muted/50 p-3 flex flex-wrap items-center justify-between gap-2 border-b border-border mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="bg-muted px-3 py-2 rounded-md">
-                    {t("common.score")}: <span className="font-bold text-primary">{score}</span>
-                  </div>
-                  <div className="bg-muted px-3 py-2 rounded-md">
-                    {t("common.bestScore")}: <span className="font-bold text-primary">{bestScore}</span>
+      <section className="py-8">
+        <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+          <div className="game-container3" translate="no">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+              {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                {/* Header Section */}
+                <div className="mb-6" translate="no">
+                  <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                    <div className="flex items-center gap-2">
+                      <img src={Game2048Image} alt="2048 Game Logo" className="w-20 h-20" />
+                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.tileMerge.name")}</h2>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Leaderboard Button */}
+                      {!user?.isAnonymous && (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+                      )}
+                      {/* Back to Home Button */}
+                      <BackToHome text={t("common.backToHome")} />
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Help Button */}
+                      <LightButton onClick={() => setShowInstructions(true)}>
+                        {t("common.help")}
+                        <HelpCircle className="mr-1 h-4 w-4" />
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Score Button */}
+                      <LightButton>{t("common.score")}: {score}</LightButton>
+                      {/* Best Score Button */}
+                      <LightButton>{t("common.bestScore")}: {bestScore}</LightButton>
+                    </div>
+                  </div>
 
               {/* Improved Game Grid */}
               <div
                 ref={gridContainerRef}
-                className="w-full max-w-sm mx-auto mb-6 select-none"
+                className="w-full max-w-md mx-auto select-none py-12"
                 style={{ touchAction: 'none' }}
               >
-                <div className="relative bg-slate-700/20 rounded-lg p-3 border border-border">
+                <div className="relative p-3">
                   {/* Background Grid */}
-                  <div className="grid grid-cols-4 gap-2 mb-0">
+                  <div className="grid grid-cols-4 gap-4 mb-0">
                     {Array(GRID_SIZE * GRID_SIZE)
                       .fill(null)
                       .map((_, index) => (
                         <div
                           key={`bg-${index}`}
-                          className="aspect-square rounded-md bg-slate-600/30 border border-slate-500/20"
+                          className="aspect-square bg-slate-600/60"
                         />
                       ))}
                   </div>
@@ -589,10 +607,10 @@ const Game2048 = () => {
                           <div
                             key={`tile-${rowIndex}-${colIndex}`}
                             className={`
-                              aspect-square rounded-md flex items-center justify-center font-bold
+                              aspect-square flex items-center justify-center font-bold
                               transition-all duration-150 ease-in-out
                               ${cell 
-                                ? 'shadow-lg transform scale-100 border border-black/20' 
+                                ? 'shadow-lg transform scale-100 border-black/20' 
                                 : 'opacity-0 scale-75'
                               }
                             `}
@@ -700,33 +718,23 @@ const Game2048 = () => {
 
               {/* Game Controls */}
               <div className="flex justify-center gap-4 px-4">
-                <button 
-                  className="btn-play px-6 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-medium transition-colors duration-200"
-                  onClick={resetGame}
-                  type="button"
-                >
-                  {t("common.newGame")}
-                </button>
-
-                <button
-                  className="px-6 py-2 rounded-md font-medium text-muted-foreground bg-muted hover:bg-muted/80 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={undoMove}
-                  disabled={moveHistory.length === 0}
-                  type="button"
-                >
+                <UndoButtonTopRounded onClick={undoMove} disabled={moveHistory.length === 0}>
                   {t("common.undo")}
-                </button>
+                </UndoButtonTopRounded>
+                <ResetButtonTopRounded onClick={resetGame}>
+                  {t("common.newGame")}
+                </ResetButtonTopRounded>
               </div>
-            </div>
+                </div>
+              </div>
 
-            {/* Instructions Card */}
-            <div className="w-full lg:w-[30%]">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t("common.howToPlay")}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-3">
-                  <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+              {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1">
+                <HowToPlayInstruction 
+                  title={t("common.howToPlay")}
+                  text={""}
+                >
+                  <ul className="list-disc pl-5 space-y-2">
                     <li>
                       {isMobile ? (
                         <>{t("common.touchTheGameAreaOrSwipeInAnyDirectionToStart")}</>
@@ -756,36 +764,83 @@ const Game2048 = () => {
                       {t("common.planAheadKeepYourHighestTileInACornerAndBeatYourHighScore")}
                     </li>
                   </ul>
-                </CardContent>
-              </Card>
+                </HowToPlayInstruction>
+                <MostReadSidebar />
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Leave Game Dialog */}
-        <Dialog open={dialog} onOpenChange={setDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("common.leaveGame")}</DialogTitle>
-              <DialogDescription>
-                <div className="space-y-4 mt-4">
-                  <p className="text-muted-foreground mb-4">
-                    {t("common.areYouSureYouWantToLeaveTheGameYourCurrentProgressWillBeLostButYourBestScoreWillBeSaved")}
-                  </p>
-                </div>
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex flex-row gap-3 justify-end">
-              <Button variant="outline" onClick={() => setDialog(false)}>
-                {t("common.no")}
-              </Button>
-              <Button variant="secondary" onClick={handleLeaveGame}>
-                {t("common.yes")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+      {/* Instructions Dialog */}
+      <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
+        <DialogContent dir={isArabic ? "rtl" : "ltr"}>
+          <DialogHeader>
+            <DialogTitle>{t("common.howToPlay")}</DialogTitle>
+            <DialogDescription>
+              <div className="text-sm space-y-3 mt-4">
+                <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                  <li>
+                    {isMobile ? (
+                      <>{t("common.touchTheGameAreaOrSwipeInAnyDirectionToStart")}</>
+                    ) : (
+                      <>
+                        {t("common.pressAnyArrowKeyToStart")}
+                      </>
+                    )}
+                  </li>
+                  <li>
+                    {isMobile ? (
+                      <>{t("common.swipeInTheDirectionYouWantToMoveTheTiles")}</>
+                    ) : (
+                      <>
+                        {t("common.moveTilesUsingArrowKeys")}
+                      </>
+                    )}
+                  </li>
+                  <li>{t("common.useCtrlZToUndoYourMove")}</li>
+                  <li>{t("common.mergeTilesWithTheSameNumberToFormALargerNumber")}</li>
+                  <li>
+                    {t("common.yourGoalIsToCreateATileWithTheNumber")}{" "}
+                    <span className="font-bold">2048</span>.
+                  </li>
+                  <li>{t("common.theGameEndsWhenThereAreNoMoreValidMovesLeft")}</li>
+                  <li>
+                    {t("common.planAheadKeepYourHighestTileInACornerAndBeatYourHighScore")}
+                  </li>
+                </ul>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowInstructions(false)}>{t("common.gotIt")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Leave Game Dialog */}
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent dir={isArabic ? "rtl" : "ltr"}>
+          <DialogHeader>
+            <DialogTitle>{t("common.leaveGame")}</DialogTitle>
+            <DialogDescription>
+              <div className="space-y-4 mt-4">
+                <p className="text-muted-foreground mb-4">
+                  {t("common.areYouSureYouWantToLeaveTheGameYourCurrentProgressWillBeLostButYourBestScoreWillBeSaved")}
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-row gap-3 justify-end">
+            <Button variant="outline" onClick={() => setDialog(false)}>
+              {t("common.no")}
+            </Button>
+            <Button variant="secondary" onClick={handleLeaveGame}>
+              {t("common.yes")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

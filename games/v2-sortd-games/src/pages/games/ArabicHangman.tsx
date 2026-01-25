@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Layout from "../../components/Layout";
 import { useToast } from "@/hooks/use-toast";
 import { RotateCcw, ArrowLeft, Lightbulb, Home, ArrowRight } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Info, HelpCircle, RefreshCw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -24,10 +24,20 @@ import GamesServices from "../../../v2-services/games-service";
 import { useUser } from "../../context/UserContext";
 import LeaderboardModal from "./LeaderboardModal";
 import { addUtmParams } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import HangmanImage from "../../assets/hangman.png";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
 
 import { Trophy } from "lucide-react";
+import { LightButton, BlueButton, ResetButton, NextButton, PlayAgainButton } from "../../components/ui/GamesButton";
 
 const ARABIC_ALPHABET = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي".split('');
+const ENGLISH_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
 
 /**
  * Normalizes an Arabic string by removing diacritics and unifying character variants.
@@ -104,34 +114,37 @@ const ReplayDialog: React.FC<ReplayDialogProps> = ({
     finalScore = 0,
     totalGames = 0,
 }) => {
+    const { t, i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar';
+    
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent dir="rtl">
+            <DialogContent dir={isArabic ? "rtl" : "ltr"}>
                 <DialogHeader>
-                    <DialogTitle>اللعبة انتهت!</DialogTitle>
+                    <DialogTitle>{t("games.hangman.gameComplete")}</DialogTitle>
                     <DialogDescription>
                         <div className="space-y-4 mt-4">
                             <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg">
                                 <div className="text-2xl font-bold text-primary mb-2">
-                                    النتيجة النهائية: {finalScore}/{totalGames}
+                                    {t("games.hangman.finalScore", { finalScore, total: totalGames })}
                                 </div>
                                 <div className="text-muted-foreground">
                                     {finalScore === totalGames
-                                        ? "درجة كاملة! عمل رائع!"
+                                        ? t("games.hangman.perfectScoreAmazingWork")
                                         : finalScore > totalGames / 2
-                                            ? "عمل جيد! أحسنت!"
-                                            : "مجهود جيد! حاول مرة أخرى للتحسين!"}
+                                            ? t("games.hangman.greatJobWellDone")
+                                            : t("games.hangman.goodEffortTryAgainToImprove")}
                                 </div>
                             </div>
-                            <p className="text-center">هل تريد اللعب مرة أخرى؟</p>
+                            <p className="text-center">{t("games.hangman.wouldYouLikeToPlayAgain")}</p>
                         </div>
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter className="flex gap-2">
+                <DialogFooter className={isArabic ? "flex flex-row-reverse gap-2" : "flex flex-row gap-2"}>
                     <Button variant="outline" onClick={onClose}>
-                        لا، شكراً
+                        {t("games.hangman.noThanks")}
                     </Button>
-                    <Button onClick={onConfirm}>نعم، العب مجدداً</Button>
+                    <Button onClick={onConfirm}>{t("games.hangman.yesPlayAgain")}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -142,11 +155,32 @@ const STORAGE_KEY = "played_games";
 const SCORE_STORAGE_KEY = "accumulated_scores";
 
 const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
+    const { t, i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar';
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useUser();
     const isArticleView = searchParams.get("src") === "article";
     const isMobile = useIsMobile();
+    
+    // Game schema for SEO
+    const baseUrl = typeof window !== "undefined" 
+        ? `${window.location.protocol}//${window.location.host}` 
+        : "https://asharqgames-uat.sortd.pro";
+    const gameUrl = `${baseUrl}${location.pathname}${location.search ? location.search : ""}`;
+    const gameName = t("games.hangman.name");
+    
+    useGameSchema(
+        {
+            name: gameName,
+            headline: `${gameName} - ${t("common.asharqGames")}`,
+            description: t("games.hangman.description"),
+            url: gameUrl,
+            image: `${baseUrl}/assets/hangman.jpg`,
+            isAccessibleForFree: true,
+        },
+    );
     const [showCelebration, setShowCelebration] = useState(false);
     const audioContextRef = useRef<AudioContext | null>(null);
     const [currentGameIndex, setCurrentGameIndex] = useState(0);
@@ -467,20 +501,20 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                 setIsCompleted(true);
                 setScore(score + gameScore);
                 toast({
-                    title: "مبروك! 🎉",
+                    title: t("games.hangman.congratulations"),
                     className:
                         "bg-green-600 text-white font-semibold border-none shadow-xl",
-                    description: "لقد خمّنت الكلمة بشكل صحيح!",
+                    description: t("games.hangman.youGuessedTheWordCorrectly"),
                 });
             } else if (wrongGuesses >= maxWrongGuesses && !isCompleted) {
                 const gameScore = 0;
                 markGameAsPlayed(game_id, gameScore);
                 setIsCompleted(true);
                 toast({
-                    title: "انتهت اللعبة!",
+                    title: t("games.hangman.gameOver"),
                     className:
                         "bg-red-500 text-white font-semibold border-none shadow-xl",
-                    description: `الكلمة كانت: ${word}`,
+                    description: t("games.hangman.theWordWas", { word }),
                     variant: "destructive",
                 });
             }
@@ -531,15 +565,9 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
         }
     };
 
-    const handleUserRegistrationSuccess = async (newUser: {
-        username: string;
-    }) => {
-        window.location.href = leaderboardUrl;
-    };
-
     const leaderboardUrl = isArticleView
         ? `/leaderboard?${new URLSearchParams({
-            name: "Hangman",
+            name: t("games.hangman.name"),
             duration: "month",
             game_type: "hangman",
             top_k: "10",
@@ -547,13 +575,19 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
             score_type: "sum",
         }).toString()}`
         : `/games/leaderboard?${new URLSearchParams({
-            name: "Hangman",
+            name: t("games.hangman.name"),
             duration: "month",
             game_type: "hangman",
             top_k: "10",
             sort_order: "desc",
             score_type: "sum",
         }).toString()}`;
+
+    const handleUserRegistrationSuccess = async (newUser: {
+        username: string;
+    }) => {
+        window.location.href = leaderboardUrl;
+    };
 
     const renderWord = () => {
         return word.split("").map((letter, index) => (
@@ -629,9 +663,9 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
         );
 
         return (
-            <div className="mb-4" dir="rtl">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="text-sm font-medium">صحيح: </span>
+            <div className="mb-4" dir={isArabic ? "rtl" : "ltr"}>
+                <div className={`flex flex-wrap items-center gap-2 mb-2 ${isArabic ? "flex-row-reverse" : ""}`}>
+                    <span className="text-sm font-medium">{t("games.hangman.correct")}</span>
                     {correctLetters.map((letter) => (
                         <span
                             key={letter}
@@ -641,8 +675,8 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                         </span>
                     ))}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">خطأ: </span>
+                <div className={`flex flex-wrap items-center gap-2 ${isArabic ? "flex-row-reverse" : ""}`}>
+                    <span className="text-sm font-medium">{t("games.hangman.wrong")}</span>
                     {wrongLetters.map((letter) => (
                         <span
                             key={letter}
@@ -658,8 +692,8 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
 
     if (!currentGame) {
         const component = (
-            <div className="text-center" dir="rtl">
-                <h1 className="text-3xl font-bold mb-4">لا توجد بيانات لعبة متاحة</h1>
+            <div className="text-center" dir={isArabic ? "rtl" : "ltr"}>
+                <h1 className="text-3xl font-bold mb-4">{t("games.hangman.noGameDataAvailable")}</h1>
             </div>
         );
         return isArticleView ? component : <Layout>{component}</Layout>;
@@ -668,200 +702,183 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
     if (!user && !isArticleView) {
         navigate("/");
     }
+
     const component = (
-        <div className="game-area relative" dir="rtl">
-            {/* Enhanced Celebration Animation */}
-            {showCelebration && (
-                <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
-                    <div className="absolute inset-0 celebration-container">
-                        {/* Confetti particles with staggered timing */}
-                        {[...Array(30)].map((_, i) => (
-                            <div
-                                key={i}
-                                className="absolute confetti-card"
-                                style={{
-                                    left: `${Math.random() * 100}%`,
-                                    top: '-20px',
-                                    animationDelay: `${Math.random() * 1.5}s`,
-                                    animationDuration: `${3 + Math.random() * 2}s`,
-                                }}
-                            >
+        <section className="py-8">
+            <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+                {/* Enhanced Celebration Animation */}
+                {showCelebration && (
+                    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+                        <div className="absolute inset-0 celebration-container">
+                            {/* Confetti particles with staggered timing */}
+                            {[...Array(30)].map((_, i) => (
                                 <div
-                                    className="w-4 h-6 rounded-sm shadow-lg transform rotate-45"
+                                    key={i}
+                                    className="absolute confetti-card"
                                     style={{
-                                        backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#fdcb6e', '#6c5ce7'][Math.floor(Math.random() * 8)]
+                                        left: `${Math.random() * 100}%`,
+                                        top: '-20px',
+                                        animationDelay: `${Math.random() * 1.5}s`,
+                                        animationDuration: `${3 + Math.random() * 2}s`,
                                     }}
-                                />
-                            </div>
-                        ))}
-
-
-
+                                >
+                                    <div
+                                        className="w-4 h-6 rounded-sm shadow-lg transform rotate-45"
+                                        style={{
+                                            backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#fdcb6e', '#6c5ce7'][Math.floor(Math.random() * 8)]
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
-
-            <div className="game-container"   style={{ maxWidth: '1300px', margin: '0 auto' }}>
-                {isMobile && isArticleView && (
-                    <button
-                        onClick={() => (window.location.href = window.location.origin)}
-                        className="absolute top-4 right-4 z-10 p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full transition-colors"
-                        aria-label="الذهاب للصفحة الرئيسية"
-                    >
-                        <Home size={20} className="text-slate-600 dark:text-slate-300" />
-                    </button>
                 )}
 
-                {/* Header Section */}
-                <div className="mb-4">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                        <h1 className="text-2xl md:text-3xl font-bold mr-12 md:mr-0">
-                            لعبة الرجل المشنوق
-                        </h1>
-                        {!user?.isAnonymous && (
-                        isArticleView ? (
-                            <a
-                                href="#"
-                                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg rounded-md px-3 py-2 flex items-center"
-                                onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                                    e.preventDefault();
-                                    if (!user?.username) {
-                                        setShowDialog(true);
-                                    } else {
-                                        window.location.href = leaderboardUrl;
-                                    }
-                                }}
-                                rel="noopener noreferrer"
-                            >
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span aria-label="لوحة المتصدرين">
-                                            <Trophy size={18} />
-                                        </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>لوحة المتصدرين</TooltipContent>
-                                </Tooltip>
-                            </a>
-                        ) : (
-                            <Button
-                                onClick={(): void => navigate(leaderboardUrl)}
-                                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-                            >
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span aria-label="لوحة المتصدرين">
-                                            <Trophy size={18} />
-                                        </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>لوحة المتصدرين</TooltipContent>
-                                </Tooltip>
-                            </Button>
-                        )
-                        )}
-                    </div>
-                </div>
+                <div className="game-container3" translate="no">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+                        {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+                        <div className="lg:col-span-2">
+                            {/* Header Section */}
+                            <div className="mb-6" translate="no">
+                                <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                                <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                                    <div className="flex items-center gap-2">
+                                        <img src={HangmanImage} alt="Hangman Logo" className="w-20 h-20" />
+                                        <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.hangman.name")}</h2>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        {/* Leaderboard Button */}
+                                        {!user?.isAnonymous && (
+                                            isArticleView ? (
+                                                <a
+                                                    href="#"
+                                                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg rounded-md px-3 py-2 flex items-center"
+                                                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                                                        e.preventDefault();
+                                                        if (!user?.username) {
+                                                            setShowDialog(true);
+                                                        } else {
+                                                            window.location.href = leaderboardUrl;
+                                                        }
+                                                    }}
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span aria-label={t("common.leaderboard")}>
+                                                                <Trophy size={18} />
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>{t("common.leaderboard")}</TooltipContent>
+                                                    </Tooltip>
+                                                </a>
+                                            ) : (
+                                                <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+                                            )
+                                        )}
+                                        {/* Back to Home Button */}
+                                        <BackToHome text={t("common.backToHome")} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
 
                 {/* All Games Completed Message */}
                 {allGamesCompleted && hasDeclinedReplay && !isArticleView && (
                     <div className="mb-6 bg-card border border-border p-6 rounded-lg shadow-lg text-center">
                         <h3 className="text-2xl font-semibold mb-4 text-primary">
-                            جميع الألعاب اكتملت!
+                            {t("games.hangman.allGamesCompleted")}
                         </h3>
                         <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg mb-4">
                             <div className="text-xl font-semibold text-secondary mb-2">
-                                النتيجة الإجمالية: {accumulatedScore}
+                                {t("games.hangman.totalScore", { score: accumulatedScore })}
                             </div>
                             <div className="text-muted-foreground">
                                 {score === gameData.length
-                                    ? "جلسة مثالية! عمل رائع!"
+                                    ? t("games.hangman.perfectSessionAmazingWork")
                                     : score > gameData.length / 2
-                                        ? "جلسة رائعة! أحسنت!"
-                                        : "مجهود جيد! حاول مرة أخرى للتحسين!"}
+                                        ? t("games.hangman.greatSessionWellDone")
+                                        : t("games.hangman.goodEffortTryAgainToImprove")}
                             </div>
                         </div>
                         <p className="text-muted-foreground mb-6">
-                            لقد أنهيت جميع الألعاب المتاحة. سنضيف ألعاباً جديدة قريباً!
+                            {t("games.hangman.youveFinishedAllAvailableGamesWellAddNewGamesSoon")}
                         </p>
                         <div className="space-y-3">
-                            <Button
-                                onClick={handleReplayConfirm}
-                                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full transition-colors"
-                            >
-                                <RefreshCw className="ml-2 h-4 w-4" />
-                                أعد اللعب
-                            </Button>
+                            <PlayAgainButton onClick={handleReplayConfirm}>
+                                {t("games.hangman.replayTheseGames")}
+                                <RefreshCw className="mr-1 h-4 w-4" />
+                            </PlayAgainButton>
                             <p className="text-sm text-muted-foreground">
-                                أو انتظر إضافة ألعاب جديدة
+                                {t("games.hangman.orWaitForNewGamesToBeAdded")}
                             </p>
                         </div>
                     </div>
                 )}
 
-                {/* Game Content */}
-                {!(allGamesCompleted && hasDeclinedReplay && !isArticleView) && (
-                    <div className="flex flex-col md:flex-row w-full gap-4">
-                        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full md:w-[70%]">
-                            <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm">
-                                        النتيجة: {score}
-                                    </Button>
-
-                                    <Button variant="outline" size="sm">
-                                        الإجمالي: {accumulatedScore}
-                                    </Button>
-
-                                    <Button variant="outline" size="sm">
-                                        خطأ: {wrongGuesses}/{maxWrongGuesses}
-                                    </Button>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm">
-                                        الجولة: {currentGameIndex + 1}/{gameData.length}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setShowInstructions(true)}
-                                        className="bg-muted flex items-center gap-2"
-                                    >
-                                        <HelpCircle className="ml-1 h-4 w-4" /> مساعدة
-                                    </Button>
-                                </div>
-                            </div>
+                            {/* Game Content */}
+                            {!(allGamesCompleted && hasDeclinedReplay && !isArticleView) && (
+                                <div className="flex flex-col md:flex-row w-full gap-4 mt-8" translate="no">
+                                    <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden pb-0 w-full md:w-[100%]" translate="no">
+                                        {/* Score and Round Info */}
+                                        <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                                            <div className="flex items-center gap-2">
+                                                {/* Round Indicator */}
+                                                <BlueButton >
+                                                {t("games.hangman.round", { current: currentGameIndex + 1, total: gameData.length })}
+                                                </BlueButton>
+                                                {/* Help Button */}
+                                                <LightButton onClick={() => setShowInstructions(true)}>
+                                                    {t("common.help")}
+                                                    <HelpCircle className="mr-1 h-4 w-4" />
+                                                </LightButton>
+                                                
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {/* Current Score Button */}
+                                                <LightButton>{t("games.hangman.score", { score })}</LightButton>
+                                                {/* Total Score Button */}
+                                                <LightButton>{t("games.hangman.total", { score: accumulatedScore })}</LightButton>
+                                                {/* Wrong Guesses Button */}
+                                                <LightButton>{t("games.hangman.wrongMax", { current: wrongGuesses, max: maxWrongGuesses })}</LightButton>
+                                            </div>
+                                        </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className="bg-card rounded-lg p-6 shadow-lg border">
+                                <div className={`bg-card p-6 border-dotted border-[#E8E8E8] 
+                                ${isArabic ? "border-l-2 border-l-[#E8E8E8]" : "border-r-2 border-r-[#E8E8E8]"}
+                                `}>
                                     <div className="mb-6">
                                         <h3 className="text-lg font-semibold mb-3 text-center">
-                                            الرجل المشنوق
+                                            {t("games.hangman.hangman")}
                                         </h3>
                                         {renderHangman()}
                                     </div>
 
                                     <div className="mb-6">
                                         <h3 className="text-lg font-semibold mb-3 text-center">
-                                            الكلمة
+                                            {t("games.hangman.word")}
                                         </h3>
                                         <div className="flex justify-center flex-wrap">
                                             {renderWord()}
                                         </div>
                                     </div>
 
-                                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
                                         <p className="text-yellow-800 dark:text-yellow-200 font-medium">
-                                            التلميح: {clue}
+                                            {t("games.hangman.clue", { clue })}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="bg-card rounded-lg p-6 shadow-lg border">
+                                <div className="bg-card p-6">
                                     <div className="flex items-center justify-between gap-2 mb-2">
-                                        <h3 className="text-lg font-semibold">قم بالتخمين</h3>
+                                        <h3 className="text-lg font-semibold">{t("games.hangman.makeYourGuess")}</h3>
                                     </div>
                                     <div className="mb-4">
                                         <p className="text-xs text-muted-foreground mb-2">
-                                            اكتب حرفاً واضغط Enter:
+                                            {t("games.hangman.typeALetterAndPressEnter")}
                                         </p>
                                         <Input
                                             autoComplete="off"
@@ -871,48 +888,32 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                             value={currentInput}
                                             onChange={handleInputChange}
                                             onKeyDown={handleKeyPress} // Changed from onKeyPress for better Enter key detection
-                                            placeholder="أدخل حرفاً"
+                                            placeholder={t("games.hangman.enterALetter")}
                                             className="text-center text-lg font-semibold h-10 border dark:border-white"
                                             disabled={isCompleted}
-                                            dir="rtl"
+                                            dir={isArabic ? "rtl" : "ltr"}
                                         />
                                     </div>
 
                                     {guessedLetters.size > 0 && renderGuessedLetters()}
 
-                                    <div className="flex flex-wrap gap-3 justify-center">
+                                    <div className="flex flex-wrap gap-3 justify-center pt-4">
                                         {!isCompleted ? (
-                                            <div key="reset-button">
-                                                <button
-                                                    onClick={resetCurrentGame}
-                                                    className="flex items-center gap-2 px-5 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-                                                >
-                                                    <RotateCcw size={16} />
-                                                    إعادة تعيين
-                                                </button>
-                                            </div>
+                                            <ResetButton onClick={resetCurrentGame}>
+                                                {t("games.hangman.reset")}
+                                            </ResetButton>
                                         ) : !isArticleView ? (
-                                            <div key="next-word-button">
-                                                <button
-                                                    onClick={nextWord}
-                                                    className="px-8 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-                                                >
-                                                    <ArrowLeft size={18} />
-                                                    الكلمة التالية
-                                                </button>
-                                            </div>
+                                            <NextButton onClick={nextWord}>
+                                                {t("games.hangman.nextWord")}
+                                            </NextButton>
                                         ) : (
-                                            <div key="replay-button">
-                                                <button
-                                                    onClick={handleReplayConfirm}
-                                                    className="px-8 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-                                                >
-                                                    العب مجدداً
-                                                </button>
-                                            </div>
+                                            <PlayAgainButton onClick={handleReplayConfirm}>
+                                                {t("games.hangman.playAgain")}
+                                                <RefreshCw className="mr-1 h-4 w-4" />
+                                            </PlayAgainButton>
                                         )}
                                     </div>
-    {/* On-screen Arabic Keyboard - Always Visible */}
+                            {/* On-screen Keyboard - Always Visible */}
                         <div
                             className="
                                 w-full bg-card border-t border-border p-3 md:p-4 mt-4
@@ -921,11 +922,14 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                 md:w-full md:max-w-lg md:mx-auto
                             "
                         >
-                            <div className="grid grid-cols-7 sm:grid-cols-8 gap-1.5 sm:gap-2">
-                                {ARABIC_ALPHABET.map((letter) => {
-                                    const isGuessed = guessedLetters.has(letter);
-                                    const isCorrect = isGuessed && normalizedWord.includes(letter);
-                                    const isWrong = isGuessed && !normalizedWord.includes(letter);
+                            <div className={`grid gap-1.5 sm:gap-2 ${isArabic ? "grid-cols-7 sm:grid-cols-8" : "grid-cols-7 sm:grid-cols-9"}`}>
+                                {(isArabic ? ARABIC_ALPHABET : ENGLISH_ALPHABET).map((letter) => {
+                                    // For English, lowercase first, then normalize. For Arabic, just normalize.
+                                    const letterToNormalize = isArabic ? letter : letter.toLowerCase();
+                                    const normalizedLetter = normalizeArabic(letterToNormalize);
+                                    const isGuessed = guessedLetters.has(normalizedLetter);
+                                    const isCorrect = isGuessed && normalizedWord.includes(normalizedLetter);
+                                    const isWrong = isGuessed && !normalizedWord.includes(normalizedLetter);
 
                                     return (
                                         <button
@@ -951,19 +955,19 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                 })}
                             </div>
                         </div>
-                                    {!isArticleView && currentGame?.article_detail &&
-                                        (isMobile ? (
+                                    {/* Article Link - Hidden on mobile, shown on desktop */}
+                                    {!isArticleView && currentGame?.article_detail ? (
+                                        <div className="hidden md:block py-3 px-3">
                                             <a
                                                 href={addUtmParams(currentGame?.article_detail?.link || "")}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="flex mb-4 items-start mt-4 gap-4 p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 hover:shadow-md transition-shadow"
                                             >
-                                                {/* Right: Image for RTL */}
                                                 <div className="w-24 sm:w-28 md:w-32 lg:w-40 flex items-center justify-center h-[120px] sm:h-[140px] ">
                                                     <img
                                                         src={currentGame?.article_detail?.image_url}
-                                                        alt="صورة المقال"
+                                                        alt={t("games.hangman.readMoreAboutArticle")}
                                                         className="h-full w-full object-cover rounded-md"
                                                         onError={(e) => {
                                                             e.currentTarget.onerror = null;
@@ -973,10 +977,9 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                                     />
                                                 </div>
 
-                                                {/* Left: Headline Text for RTL */}
-                                                <div className="flex-1 text-right">
+                                                <div className={`flex-1 ${isArabic ? "text-right" : "text-left"}`}>
                                                     <h3 className="font-semibold mb-1 text-blue-900 dark:text-blue-100">
-                                                        اقرأ المزيد عن المقال:{" "}
+                                                        {t("games.hangman.readMoreAboutArticle")}
                                                     </h3>
                                                     <p className="text-blue-800 dark:text-blue-200 font-medium leading-relaxed hover:underline cursor-pointer">
                                                         {currentGame?.article_detail?.title}
@@ -995,6 +998,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                                     </p>
                                                 </div>
                                             </a>
+                                        </div>
                                         ) : (
                                             <a
                                                 href={addUtmParams(currentGame?.article_detail?.link || "")}
@@ -1006,7 +1010,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                                 <div className="w-24 sm:w-28 md:w-32 lg:w-40 flex items-center justify-center h-[120px] sm:h-[140px]">
                                                     <img
                                                         src={currentGame?.article_detail?.image_url}
-                                                        alt="صورة المقال"
+                                                        alt={t("games.hangman.readMoreAboutArticle")}
                                                         className="h-full w-full object-cover rounded-md"
                                                         onError={(e) => {
                                                             e.currentTarget.onerror = null;
@@ -1017,14 +1021,14 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                                 </div>
 
                                                 <div className="flex-1 text-center">
-                                                    <h3 className="font-semibold mb-1 text-blue-900 dark:text-blue-100">
-                                                        اقرأ المزيد عن المقال :{" "}
+                                                    <h3 className="font-bold text-[18px] leading-[40px] text-black text-right">
+                                                        {t("games.hangman.readMoreAboutArticle")}
                                                     </h3>
-                                                    <p className="text-blue-800 dark:text-blue-200 font-medium leading-relaxed hover:underline cursor-pointer">
+                                                    <p className="font-bold text-[18px] leading-[40px] text-black text-right cursor-pointer hover:underline">
                                                         {currentGame?.article_detail?.title}
-                                                        <span className="mr-2 align-middle inline-block">
+                                                        <span className="mr-2 inline-flex align-middle">
                                                             <ExternalLink
-                                                                className="w-5 h-5 text-primary mb-2"
+                                                                className="w-5 h-5 font-bold text-[18px] leading-[40px] align-middle text-[#C62426]"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     window.open(
@@ -1037,73 +1041,69 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                                     </p>
                                                 </div>
                                             </a>
-                                        ))}
+                                    )}
+
+                                    {isCompleted && (
+                                        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                            <h3 className="font-semibold mb-2 text-center">
+                                                {t("games.hangman.wordLabel", { word: word.toUpperCase() })}
+                                            </h3>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-
-                            {isCompleted && (
-                                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                    <h3 className="font-semibold mb-2 text-center">
-                                        الكلمة: {word.toUpperCase()}
-                                    </h3>
-                                </div>
-                            )}
-                        </div>
                     
 
-                        <div className="w-full md:w-[30%]">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg">كيفية اللعب</CardTitle>
-                                </CardHeader>
-                                <CardContent className="text-sm space-y-2">
-                                    <p className="text-sm text-muted-foreground italic mt-2">
-                        انقر على حرف لتخمينه. لديك{" "}
-                                        <span className="font-bold text-red-500">6 فرص</span> لارتكاب أخطاء. بعد ذلك، تنتهي اللعبة. اختر حروفك بحكمة!
-                                    </p>
-                                </CardContent>
-                            </Card>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                        {/* Most Read Sidebar - Takes 1 column on large screens */}
+                        <div className="lg:col-span-1">
+                            <HowToPlayInstruction 
+                                title={t("games.hangman.howToPlay")} 
+                                text={t("games.hangman.typeALetterAndPressEnterToGuessYouHave6ChancesToMakeWrongGuessesAfterThatTheGameEndsChooseYourLettersWisely")} 
+                                > </HowToPlayInstruction>
+                            <MostReadSidebar />
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
 
-            <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-                <DialogContent dir="rtl">
-                    <DialogHeader>
-                        <DialogTitle>كيفية لعب لعبة الرجل المشنوق</DialogTitle>
-                        <DialogDescription>
-                            <div className="space-y-4 mt-4">
-                                <p className="text-sm text-muted-foreground italic mt-2">
-                  انقر على حرف لتخمينه. لديك{" "}
-                                    <span className="font-bold text-red-500">6 فرص</span> لارتكاب أخطاء. بعد ذلك، تنتهي اللعبة. اختر حروفك بحكمة!
-                                </p>
-                            </div>
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button onClick={() => setShowInstructions(false)}>فهمت</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
+                    <DialogContent dir={isArabic ? "rtl" : "ltr"}>
+                        <DialogHeader>
+                            <DialogTitle>{t("games.hangman.howToPlayHangmanGame")}</DialogTitle>
+                            <DialogDescription>
+                                <div className="space-y-4 mt-4">
+                                    <p className="text-sm text-muted-foreground italic mt-2">
+                                        {t("games.hangman.typeALetterAndPressEnterToGuessYouHave6ChancesToMakeWrongGuessesAfterThatTheGameEndsChooseYourLettersWisely")}
+                                    </p>
+                                </div>
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button onClick={() => setShowInstructions(false)}>{t("games.hangman.gotIt")}</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
-            <UserRegistrationDialog
-                isOpen={showDialog}
-                onClose={() => setShowDialog(false)}
-                onSuccess={handleUserRegistrationSuccess}
-                title="املأ التفاصيل لعرض لوحة المتصدرين"
-            />
+                <UserRegistrationDialog
+                    isOpen={showDialog}
+                    onClose={() => setShowDialog(false)}
+                    onSuccess={handleUserRegistrationSuccess}
+                    title={t("games.hangman.fillTheDetailsToShowLeaderboard")}
+                />
 
-            <ReplayDialog
-                isOpen={showReplayDialog}
-                onClose={handleReplayClose}
-                onConfirm={handleReplayConfirm}
-                finalScore={score}
-                totalGames={gameData.length}
-            />
+                <ReplayDialog
+                    isOpen={showReplayDialog}
+                    onClose={handleReplayClose}
+                    onConfirm={handleReplayConfirm}
+                    finalScore={score}
+                    totalGames={gameData.length}
+                />
 
-
-            <style>{`
+                <style>{`
         .celebration-container {
           position: relative;
           width: 100%;
@@ -1171,7 +1171,8 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
           animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
       `}</style>
-        </div>
+            </div>
+        </section>
     );
 
     return isArticleView ? component : <Layout>{component}</Layout>;

@@ -20,8 +20,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Info, HelpCircle, Settings, Puzzle } from "lucide-react";
 import { Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatTime, formatNumberForDisplay } from "../../utils/numberFormatter";
+import { formatTime } from "../../utils/numberFormatter";
 import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import MemoryGameImage from "../../assets/card-pair.png";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import { LightButton, BlueButton, ResetButtonTopRounded, PlayAgainButtonTopRounded } from "../../components/ui/GamesButton";
 
 type Card = {
   id: number;
@@ -109,7 +116,7 @@ const GameCard = React.memo(({
 
   return (
     <div
-      className={`aspect-[3/2] rounded-md cursor-pointer transition-all duration-300 transform ${
+      className={`aspect-[3/3] cursor-pointer transition-all duration-300 transform ${
         card.flipped ? "rotate-y-180" : ""
       } ${isJustMismatched ? "animate-shake" : ""} ${isJustMatched ? "animate-match-pulse" : ""} ${
         flipAnim === "flip" ? "animate-flip-zoom" : flipAnim === "flipback" ? "animate-flipback-zoom" : ""
@@ -139,16 +146,16 @@ const GameCard = React.memo(({
       >
         {/* Card Back */}
         <div
-          className={`absolute w-full h-full flex items-center justify-center rounded-md bg-primary-foreground border border-primary backface-hidden ${
+          className={`absolute w-full h-full flex items-center justify-center bg-primary-foreground border border-[#DEDEDE] backface-hidden ${
             card.flipped ? "invisible" : "visible"
           }`}
         >
-          <span className="text-primary text-2xl">?</span>
+          <span className="text-[#DEDEDE] text-2xl">?</span>
         </div>
 
         {/* Card Front */}
         <div
-          className={`absolute w-full h-full flex items-center justify-center rounded-md bg-primary/10 border ${
+          className={`absolute w-full h-full flex items-center justify-center bg-primary/10 border ${
             card.matched ? "border-accent" : "border-primary"
           } rotate-y-180 backface-hidden ${
             card.flipped ? "visible" : "invisible"
@@ -162,7 +169,8 @@ const GameCard = React.memo(({
 });
 
 const MemoryGame = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const navigate = useNavigate();
   const { user } = useUser();
   const location = useLocation();
@@ -435,22 +443,22 @@ const MemoryGame = () => {
     }
   }, [difficulty]);
 
-  const params = useMemo(() => new URLSearchParams({
+  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
     name: "Card Pair Challenge",
     duration: "month",
     game_type: "card-pair-challenge",
     top_k: "10",
     sort_order: "asc",
     score_type: "min",
-  }), []);
+  }).toString()}`;
 
   const handleLeaderBoard = useCallback(() => {
     if (moves === 0 || gameCompleted) {
-      navigate(`/games/leaderboard?${params.toString()}`);
+      navigate(leaderboardUrl);
     } else {
       setDialog(true);
     }
-  }, [moves, gameCompleted, navigate, params]);
+  }, [moves, gameCompleted, navigate, leaderboardUrl]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -493,66 +501,59 @@ const MemoryGame = () => {
         </div>
       )}
       
-      <div className="game-area">
-        <div className="game-container">
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h1 className="text-2xl md:text-3xl font-bold">
-                {t("games.cardPairChallenge.name")}
-              </h1>
-              {!user?.isAnonymous && (
-                <Button
-                onClick={handleLeaderBoard}
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span aria-label={t("common.leaderboard")}>
-                      <Trophy size={18} />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("common.leaderboard")}</TooltipContent>
-                </Tooltip>
-              </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden pb-3 w-full md:w-[70%]">
-              <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    {t("games.cardPairChallenge.moves")} : {formatNumberForDisplay(moves)}
-                  </Button>
-
-                  <Button variant="outline" size="sm">
-                    <TimerDisplay time={time} />
-                  </Button>
+      <section className="py-8">
+        <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+          <div className="game-container3" translate="no">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+              {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                {/* Header Section */}
+                <div className="mb-6" translate="no">
+                  <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                    <div className="flex items-center gap-2">
+                      <img src={MemoryGameImage} alt="Memory Game Logo" className="w-20 h-20" />
+                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.cardPairChallenge.name")}</h2>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Leaderboard Button */}
+                      {!user?.isAnonymous && (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+                      )}
+                      {/* Back to Home Button */}
+                      <BackToHome text={t("common.backToHome")} />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowDifficulty(true)}
-                  >
-                    <Settings className="mr-1 h-4 w-4" />
-                    {difficulty === "easy" ? t("games.cardPairChallenge.easy") : 
-                     difficulty === "medium" ? t("games.cardPairChallenge.medium") : 
-                     t("games.cardPairChallenge.hard")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowInstructions(true)}
-                    className="bg-muted flex items-center gap-2"
-                  >
-                    <HelpCircle className="mr-1 h-4 w-4" /> {t("common.help")}
-                  </Button>
-                </div>
-              </div>
 
-              <div className={`grid ${gridCols} gap-2 md:gap-4 max-w-sm mx-auto my-4 transition-all duration-300 ${isChangingDifficulty ? 'opacity-50' : 'opacity-100'}`}>
+                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Difficulty Button */}
+                      <BlueButton onClick={() => setShowDifficulty(true)}>
+                        {difficulty === "easy" ? t("games.cardPairChallenge.easy") : 
+                         difficulty === "medium" ? t("games.cardPairChallenge.medium") : 
+                         t("games.cardPairChallenge.hard")}
+                         <Settings className="mr-1 h-4 w-4" />
+                      </BlueButton>
+                      {/* Help Button */}
+                      <LightButton onClick={() => setShowInstructions(true)}>
+                        {t("common.help")}
+                        <HelpCircle className="mr-1 h-4 w-4" />
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Moves Button */}
+                      <LightButton>{t("games.cardPairChallenge.moves")} : {moves}</LightButton>
+                      {/* Timer Button */}
+                      <LightButton><TimerDisplay time={time} /></LightButton>
+                    </div>
+                  </div>
+
+              <div className={`grid ${gridCols} gap-2 md:gap-4 max-w-sm mx-auto my-8 transition-all duration-300 ${isChangingDifficulty ? 'opacity-50' : 'opacity-100'}`}>
                 {isChangingDifficulty ? (
                   <div className="col-span-full flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -571,34 +572,30 @@ const MemoryGame = () => {
                   ))
                 )}
               </div>
-
               <div className="text-center">
-                <button className="btn-play" onClick={resetGame}>
-                  {gameCompleted ? t("common.playAgain") : t("common.reset")}
-                </button>
+                {gameCompleted ? (
+                  <PlayAgainButtonTopRounded onClick={resetGame}>{t("common.playAgain")}</PlayAgainButtonTopRounded>
+                ) : (
+                <ResetButtonTopRounded onClick={resetGame}>{t("common.reset")}</ResetButtonTopRounded>
+                )}
               </div>
-            </div>
-            
-            <div className="w-full md:w-[30%]">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t("common.howToPlay")}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <div className="flex items-center gap-3 p-3 rounded-md bg-muted/40 border border-border">
-                    <div className="w-8 h-8 rounded-md bg-primary/15 flex items-center justify-center">
-                      <Puzzle className="text-primary" size={18} />
-                    </div>
-                    <p className="text-foreground">{t("games.cardPairChallenge.flipTwoMatchingCardsToMakeAPairMatchAllPairsToWin")}</p>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+
+              {/* Most Read Sidebar - Takes 1 column on large screens */}
+              <div className="lg:col-span-1">
+                <HowToPlayInstruction 
+                  title={t("games.cardPairChallenge.howToPlayCardPairChallenge") || t("common.howToPlay")} 
+                  text={t("games.cardPairChallenge.flipTwoMatchingCardsToMakeAPairMatchAllPairsToWin") || t("games.cardPairChallenge.flipTwoCardsToFindMatchingPairs") || "Flip two cards to find matching pairs. Match all pairs to win!"} 
+                  > </HowToPlayInstruction>
+                <MostReadSidebar />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Dialogs remain the same */}
+      {/* Dialogs */}
       <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
         <DialogContent>
           <DialogHeader>
@@ -678,7 +675,7 @@ const MemoryGame = () => {
               className="bg-gray-500"
               onClick={() => {
                 setDialog(false);
-                navigate(`/games/leaderboard?${params.toString()}`);
+                navigate(leaderboardUrl);
               }}
             >
               {t("common.yesLeave")}

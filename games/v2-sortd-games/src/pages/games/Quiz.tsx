@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Layout from "../../components/Layout";
 import { useToast } from "@/hooks/use-toast";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { ArchiveRestore, ExternalLink } from "lucide-react";
 
 import {
@@ -12,6 +12,7 @@ import {
   Home,
   ArrowRight,
   Crown,
+  HelpCircle,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -28,9 +29,16 @@ import GamesServices from "../../../v2-services/games-service";
 import { useUser } from "../../context/UserContext";
 import LeaderboardModal from "./LeaderboardModal";
 import { useTranslation } from "react-i18next";
-import { formatNumberForDisplay } from "../../utils/numberFormatter";
 import { addUtmParams } from "@/lib/utils";
-
+import { useGameSchema } from "../../hooks/useGameSchema";
+import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import QuizImage from "../../assets/quiz.png";
+import BackToHome from "../../components/ui/BackToHome";
+import LeaderboardButton from "../../components/ui/LeaderboardButton";
+import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import { LightButton, BlueButton, ResetButton, NextButton, PlayAgainButton } from "../../components/ui/GamesButton";
+import ReadmoreArticleWidget from "../../components/ui/ReadmoreArticleWidget";
 import UserRegistrationDialog from "../../components/UserRegistrationDialog";
 import LeaderBoard from "./ArticleLeaderboard";
 
@@ -139,7 +147,7 @@ const ReplayDialog: React.FC<ReplayDialogProps> = ({
             <div className="space-y-4 mt-4">
               <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-primary mb-2">
-                  {t("quiz.finalScore", { finalScore: formatNumberForDisplay(finalScore), total: formatNumberForDisplay(totalGames * 5) })}
+                  {t("quiz.finalScore", { finalScore: finalScore, total: totalGames * 5 })}
                 </div>
                 <div className="text-muted-foreground">
                   {finalScore === totalGames
@@ -187,7 +195,7 @@ const InterruptDialog: React.FC<InterruptDialogProps> = ({
             <div className="space-y-4 mt-4">
               <div className="text-center bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 p-4 rounded-lg">
                 <div className="text-lg font-semibold text-primary mb-2">
-                  {t("quiz.currentProgress", { current: formatNumberForDisplay(currentScore), total: formatNumberForDisplay(totalQuestions) })}
+                  {t("quiz.currentProgress", { current: currentScore, total: totalQuestions })}
                 </div>
                 <div className="text-muted-foreground">
                   {t("quiz.youHaveAnOngoingQuizGame")}
@@ -219,9 +227,11 @@ const SCORE_STORAGE_KEY = "accumulated_scores";
 const MAX_STORED_GAMES = 10;
 
 const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink = false, nameOverride, gameTypeOverride }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const { user } = useUser();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const isArticleView = searchParams.get("src") === "article";
   const [currentGameIndex, setCurrentGameIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -238,6 +248,7 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
   const [showDialog, setShowDialog] = useState(false);
   const [showInterruptDialog, setShowInterruptDialog] = useState(false);
   const [showReplayDialog, setShowReplayDialog] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [interruptType, setInterruptType] = useState<"leaderboard" | "restart">(
     "restart"
   );
@@ -247,6 +258,24 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
   const currentGame = gameData[currentGameIndex];
   const currentQuestion = currentGame?.data.questions[currentQuestionIndex];
   const totalQuestions = currentGame?.data.questions.length || 0;
+
+  // Game schema for SEO
+  const baseUrl = typeof window !== "undefined" 
+    ? `${window.location.protocol}//${window.location.host}` 
+    : "https://asharqgames-uat.sortd.pro";
+  const gameUrl = `${baseUrl}${location.pathname}${location.search ? location.search : ""}`;
+  const gameName = t("games.quiz.name");
+  
+  useGameSchema(
+    {
+      name: gameName,
+      headline: `${gameName} - ${t("common.asharqGames")}`,
+      description: t("games.quiz.description") || gameName,
+      url: gameUrl,
+      image: `${baseUrl}/assets/quiz.jpg`,
+      isAccessibleForFree: true,
+    },
+  );
 
   const getAccumulatedScores = (): AccumulatedScores => {
     try {
@@ -672,7 +701,7 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
 
   const getOptionClass = (option: string) => {
     let baseClass =
-      "w-full py-2 px-4 text-left rounded-lg border transition-all font-medium ";
+      "w-full py-2 px-4 text-left rounded-lg border-none transition-all font-medium ";
 
     if (!isAnswered) {
       if (selectedAnswer === option) {
@@ -680,19 +709,37 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
           "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300";
       } else {
         baseClass +=
-          "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800";
+          "border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600 dark:hover:bg-gray-800";
       }
     } else {
       if (option === currentQuestion.answer) {
         baseClass +=
-          "border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300";
+          "text-[#55B45C] dark:text-[#55B45C]";
       } else if (selectedAnswer === option) {
         baseClass +=
-          "border-red-500 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300";
-      } else {
-        baseClass +=
-          "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-60";
+          "text-[#C62426] dark:text-[#C62426]";
       }
+    }
+
+    return baseClass;
+  };
+
+  const getOptionCountClass = (option: string) => {
+    console.log("option: ", option);
+    console.log("currentQuestion.answer:", currentQuestion.answer);
+    console.log("selectedAnswer:", selectedAnswer);
+    let baseClass =
+      "flex-shrink-0 w-5 h-5 font-bold text-[18px] leading-[40px] p-4 rounded-[5px] flex items-center justify-center ";
+
+    if (isAnswered && option === currentQuestion.answer) {
+      baseClass +=
+        "bg-[#55B45C] text-[#ffffff]";
+    } else if (isAnswered && option === selectedAnswer) {
+      baseClass +=
+        "bg-[#C62426] text-[#ffffff]";
+    }else {
+      baseClass +=
+        "bg-gray-200 dark:bg-gray-900";
     }
 
     return baseClass;
@@ -825,29 +872,12 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
             </h1>
             <div className="flex flex-wrap gap-3 justify-center mb-3">
               {!user?.isAnonymous && (
-              <Button
-                onClick={handleLeaderboardClick}
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-              >
-                {t("quiz.leaderBoard")}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span aria-label={t("common.leaderboard")}>
-                      <Trophy className="ml-2" size={18} />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("common.leaderboard")}</TooltipContent>
-                </Tooltip>
-              </Button>
+              <LeaderboardButton text={t("quiz.leaderBoard")} leaderboardUrl={leaderboardUrl} />
               )}
               {hasMoreGames && (
-                <button
-                  onClick={nextGame}
-                  className="flex items-center gap-2 px-5 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700  transition-all font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-                >
-                  <ArrowRight size={18} />
+                <NextButton onClick={nextGame}>
                   {t("quiz.nextQuiz")}
-                </button>
+                </NextButton>
               )}
             </div>
             <div className="bg-primary/10 rounded-lg p-2 mb-4">
@@ -855,13 +885,13 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
                 {t("quiz.yourScore")} :{" "}
                 <p className="text-xl font-bold text-primary">
                   {" "}
-                  {formatNumberForDisplay(currentGameScore)}/{formatNumberForDisplay(userAnswers.length)}
+                  {currentGameScore}/{userAnswers.length}
                 </p>
                 <span className="text-sm text-muted-foreground self-center">
                   (
                   {userAnswers.length > 0
-                    ? formatNumberForDisplay(((currentGameScore / userAnswers.length) * 100).toFixed(0))
-                    : formatNumberForDisplay(0)}
+                    ? ((currentGameScore / userAnswers.length) * 100).toFixed(0)
+                    : 0}
                   {t("quiz.correct")})
                 </span>
               </h2>
@@ -879,7 +909,7 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
               >
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-lg font-semibold">
-                    {t("quiz.questionNumber", { number: formatNumberForDisplay(index + 1) })}
+                    {t("quiz.questionNumber", { number: index + 1 })}
                   </h3>
                   <span
                     className={`px-3 py-1 rounded-full text-sm font-bold ${
@@ -927,198 +957,221 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
   }
 
   const quizContentWithFixedButton = (
-    <div className="game-area">
-      <div className="game-container">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-4 px-2">
-            {isMobile && isArticleView && (
-              <button
-                onClick={() => (window.location.href = window.location.origin)}
-                className=" bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full transition-colors"
-                aria-label="Go to Home"
-              >
-                <Home
-                  size={20}
-                  className="text-slate-600 dark:text-slate-300"
-                />
-              </button>
-            )}
-            <h1 className="text-2xl md:text-3xl font-bold">{t("quiz.quiz")}</h1>
-            {!user?.isAnonymous && (
-            isArticleView ? (
-              <a
-                href="#"
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg rounded-md px-3 py-2 flex items-center"
-                onClick={handleLeaderboardClick}
-                rel="noopener noreferrer"
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span aria-label="Leaderboard">
-                      <Trophy size={18} />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>Leaderboard</TooltipContent>
-                </Tooltip>
-              </a>
-            ) : (
-              <Button
-                onClick={handleLeaderboardClick}
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg"
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span aria-label="Leaderboard">
-                      <Trophy size={18} />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>Leaderboard</TooltipContent>
-                </Tooltip>
-              </Button>
-            )
-            )}
+    <section className="py-8">
+      <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
+        <div className="game-container3" translate="no">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+            <div className="lg:col-span-2">
+              {/* Header Section */}
+              <div className="mb-6" translate="no">
+                <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                  <div className="flex items-center gap-2">
+                    <img src={QuizImage} alt="Quiz Logo" className="w-20 h-20" />
+                    <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("quiz.quiz")}</h2>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {/* Leaderboard Button */}
+                    {!user?.isAnonymous && (
+                      isArticleView ? (
+                        <a
+                          href="#"
+                          className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold shadow-lg rounded-md px-3 py-2 flex items-center"
+                          onClick={handleLeaderboardClick}
+                          rel="noopener noreferrer"
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span aria-label={t("common.leaderboard")}>
+                                <Trophy size={18} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>{t("common.leaderboard")}</TooltipContent>
+                          </Tooltip>
+                        </a>
+                      ) : (
+                        <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
+                      )
+                    )}
+                    {/* Back to Home Button */}
+                    <BackToHome text={t("common.backToHome")} />
+                  </div>
+                </div>
+              </div>
+
+              <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
+
+              {/* All Games Completed Message */}
+              {allGamesCompleted && hasDeclinedReplay && !isArticleView && (
+                <div className="mb-6 bg-card border border-border p-6 rounded-lg shadow-lg text-center">
+                  <h3 className="text-2xl font-semibold mb-4 text-primary">
+                    {t("quiz.allGamesCompleted")}
+                  </h3>
+                  <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg mb-4">
+                    <div className="text-xl font-semibold text-secondary mb-2">
+                      {t("quiz.totalScore", { score: accumulatedScore })}
+                    </div>
+                    <div className="text-muted-foreground">
+                      {accumulatedScore === gameData.length
+                        ? t("quiz.perfectSessionAmazingWork")
+                        : accumulatedScore > gameData.length / 2
+                        ? t("quiz.greatSessionWellDone")
+                        : t("quiz.goodEffortTryAgainToImprove")}
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground mb-6">
+                    {t("quiz.youveFinishedAllAvailableGamesWellAddNewGamesSoon")}
+                  </p>
+                  <div className="space-y-3">
+                    <PlayAgainButton onClick={handleReplayConfirm}>
+                      {t("quiz.replayTheseGames")}
+                    </PlayAgainButton>
+                    <p className="text-sm text-muted-foreground">
+                      {t("quiz.orWaitForNewGamesToBeAdded")}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Game Content */}
+              {!allGamesCompleted && (
+                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden flex flex-col min-h-[450px] mt-8" translate="no">
+                  {/* Score and Round Info */}
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      {/* Round Indicator */}
+                      <BlueButton>
+                        {t("quiz.round", { current: currentGameIndex + 1, total: gameData.length })}
+                      </BlueButton>
+                      {/* Help Button */}
+                      <LightButton onClick={() => setShowInstructions(true)}>
+                        {t("common.help")}
+                        <HelpCircle className="mr-1 h-4 w-4" />
+                      </LightButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Current Score Button */}
+                      <LightButton>{t("quiz.currentScore", { score: currentGameScore })}</LightButton>
+                      {/* Accumulated Score Button */}
+                      <LightButton>{t("quiz.accumulatedScore", { score: accumulatedScore })}</LightButton>
+                      {/* Question Indicator */}
+                      <LightButton>{t("quiz.question", { current: currentQuestionIndex + 1, total: totalQuestions })}</LightButton>
+                    </div>
+                  </div>
+
+                  <div className="px-6 py-3 flex-1 overflow-y-auto">
+                    {/* Article Link - Hidden on mobile, shown on desktop */}
+                    {!isArticleView && !hideArticleLink && currentGame?.article_detail && (
+                      <ReadmoreArticleWidget article_detail={{
+                        title: currentGame?.data.title,
+                        link: currentGame?.article_detail?.link,
+                        image_url: currentGame?.article_detail?.image_url,
+                      }}
+                      />
+                    )}
+
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 my-3">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(currentQuestionIndex / totalQuestions) * 100}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="mb-5">
+                      <h2 className="mb-4 leading-relaxed py-6 font-bold text-[18px] leading-[40px] text-black">
+                        {currentQuestion.question}
+                      </h2>
+
+                      <div className="space-y-2">
+                        {["a", "b", "c", "d"].map((option, index, arr) => (
+                          <>
+                          <button
+                            key={option}
+                            onClick={() => handleAnswerSelect(option)}
+                            disabled={isAnswered}
+                            className={getOptionClass(option)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {/* <span className="flex-shrink-0 w-5 h-5 font-bold text-[18px] leading-[40px] bg-gray-200 p-4 rounded-[5px]  dark:bg-gray-900 flex items-center justify-center">
+                                {option.toUpperCase()}
+                              </span> */}
+                              <span className={getOptionCountClass(option)}>
+                                {option.toUpperCase()}
+                              </span>
+                              <span className="flex-1 text-[18px] leading-[40px] flex items-center">
+                                {currentQuestion[option as keyof Question]}
+                              </span>
+                            </div>
+                          </button>
+                          {/* Divider except last option */}
+                          {index !== arr.length - 1 && (
+                            <hr className="w-full border-0 border-t-2 border-[#DEDEDE] opacity-80" />
+                          )}
+                          </>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Most Read Sidebar - Takes 1 column on large screens */}
+            <div className="lg:col-span-1">
+              <HowToPlayInstruction 
+                title={t("games.quiz.howToPlay") || t("common.howToPlay")} 
+                text={t("games.quiz.howToPlayDescription") || t("games.quiz.instructions") || "Answer the questions correctly to score points. Each correct answer increases your score."} 
+                > </HowToPlayInstruction>
+              <MostReadSidebar />
+            </div>
           </div>
         </div>
 
-        {allGamesCompleted && hasDeclinedReplay && !isArticleView && (
-          <div className="mb-6 bg-card border border-border p-6 rounded-lg shadow-lg text-center">
-            <h3 className="text-2xl font-semibold mb-4 text-primary">
-              {t("quiz.allGamesCompleted")}
-            </h3>
-            <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg mb-4">
-              <div className="text-xl font-semibold text-secondary mb-2">
-                {t("quiz.totalScore", { score: formatNumberForDisplay(accumulatedScore) })}
-              </div>
-              <div className="text-muted-foreground">
-                {accumulatedScore === gameData.length
-                  ? t("quiz.perfectSessionAmazingWork")
-                  : accumulatedScore > gameData.length / 2
-                  ? t("quiz.greatSessionWellDone")
-                  : t("quiz.goodEffortTryAgainToImprove")}
-              </div>
-            </div>
-            <p className="text-muted-foreground mb-6">
-              {t("quiz.youveFinishedAllAvailableGamesWellAddNewGamesSoon")}
-            </p>
-            <div className="space-y-3">
-              <Button
-                onClick={handleReplayConfirm}
-                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full transition-colors"
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                {t("quiz.replayTheseGames")}
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                {t("quiz.orWaitForNewGamesToBeAdded")}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {!allGamesCompleted && (
-          <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden flex flex-col min-h-[450px]">
-            <div className="bg-muted/50 p-2 flex flex-wrap items-center justify-between gap-1 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                 {t("quiz.currentScore", { score: formatNumberForDisplay(currentGameScore) })}
-                </Button>
-                <Button variant="outline" size="sm">
-                  {t("quiz.accumulatedScore", { score: formatNumberForDisplay(accumulatedScore) })}
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-              
-                <Button variant="outline" size="sm">
-                  {t("quiz.question", { current: formatNumberForDisplay(currentQuestionIndex + 1), total: formatNumberForDisplay(totalQuestions) })}
-                </Button>
-                  <Button variant="outline" size="sm">
-                  {t("quiz.round", { current: formatNumberForDisplay(currentGameIndex + 1), total: formatNumberForDisplay(gameData.length) })}
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-3 flex-1 overflow-y-auto">
-              {!isArticleView && !hideArticleLink && (
-                <p className="text-foreground flex items-center gap-2 justify-center ">
-                  <a
-                    href={addUtmParams(currentGame?.article_detail?.link || "")}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                  >
-                    {currentGame?.data.title}
-                  </a>
-                  <ExternalLink
-                    className="w-4 h-4 cursor-pointer hover:text-primary"
-                    onClick={() =>
-                      window.open(addUtmParams(currentGame?.article_detail?.link || ""), "_blank")
-                    }
-                  />
-                </p>
-              )}
-
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 my-3">
-                <div
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${(currentQuestionIndex / totalQuestions) * 100}%`,
-                  }}
-                />
-              </div>
-
-              <div className="mb-5">
-                <h2 className="text-lg font-semibold mb-4 leading-relaxed">
-                  {currentQuestion.question}
-                </h2>
-
-                <div className="space-y-2">
-                  {["a", "b", "c", "d"].map((option) => (
-                    <button
-                      key={option}
-                      onClick={() => handleAnswerSelect(option)}
-                      disabled={isAnswered}
-                      className={getOptionClass(option)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="flex-shrink-0 w-5 h-5 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center border border-current">
-                          {option.toUpperCase()}
-                        </span>
-                        <span className="flex-1">
-                          {currentQuestion[option as keyof Question]}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+        <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
+          <DialogContent dir={isArabic ? "rtl" : "ltr"}>
+            <DialogHeader>
+              <DialogTitle>{t("games.quiz.howToPlay") || t("common.howToPlay")}</DialogTitle>
+              <DialogDescription>
+                <div className="space-y-4 mt-4">
+                  <p className="text-sm text-muted-foreground italic mt-2">
+                    {t("games.quiz.howToPlayDescription") || t("games.quiz.instructions") || "Answer the questions correctly to score points. Each correct answer increases your score."}
+                  </p>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setShowInstructions(false)}>{t("common.gotIt") || t("quiz.gotIt")}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <InterruptDialog
+          isOpen={showInterruptDialog}
+          onClose={() => setShowInterruptDialog(false)}
+          onConfirm={handleInterruptConfirm}
+          currentScore={currentGameScore}
+          totalQuestions={totalQuestions}
+          type={interruptType}
+        />
+
+        <ReplayDialog
+          isOpen={showReplayDialog}
+          onClose={handleReplayClose}
+          onConfirm={handleReplayConfirm}
+          finalScore={accumulatedScore}
+          totalGames={gameData.length}
+        />
+
+        <UserRegistrationDialog
+          isOpen={showDialog}
+          onClose={() => setShowDialog(false)}
+          onSuccess={handleUserRegistrationSuccess}
+        />
       </div>
-
-      <InterruptDialog
-        isOpen={showInterruptDialog}
-        onClose={() => setShowInterruptDialog(false)}
-        onConfirm={handleInterruptConfirm}
-        currentScore={currentGameScore}
-        totalQuestions={totalQuestions}
-        type={interruptType}
-      />
-
-      <ReplayDialog
-        isOpen={showReplayDialog}
-        onClose={handleReplayClose}
-        onConfirm={handleReplayConfirm}
-        finalScore={accumulatedScore}
-        totalGames={gameData.length}
-      />
-
-      <UserRegistrationDialog
-        isOpen={showDialog}
-        onClose={() => setShowDialog(false)}
-        onSuccess={handleUserRegistrationSuccess}
-      />
-    </div>
+    </section>
   );
 
   return isArticleView ? (
