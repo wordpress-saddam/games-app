@@ -15,6 +15,7 @@ import { UserRegistrationProvider } from "./context/UserRegistrationContext"
 import GlobalUserRegistrationDialog from "./pages/GlobalUserRegistrationDialog";
 // Game pages
 import TicTacToe from "./pages/games/TicTacToe";
+import Ludo from "./pages/games/Ludo";
 import SnakeGame from "./pages/games/SnakeGame";
 import MemoryGame from "./pages/games/MemoryGame";
 import Game2048 from "./pages/games/Game2048";
@@ -56,6 +57,7 @@ const HEIGHT_REPORTER_ROUTES = [
 const GAME_ROUTES = [
   { path: "/", element: <Index />, title: "Home" },
   { path: "/games/xox", element: <TicTacToe />, title: "XOX" },
+  { path: "/games/ludo", element: <Ludo />, title: "Ludo" },
   { path: "/games/hungry-trail", element: <SnakeData />, title: "Hungry Trail" },
   { path: "/games/card-pair-challenge", element: <MemoryGame />, title: "Card Pair Challenge" },
   { path: "/games/tile-merge", element: <Game2048 />, title: "Tile Merge Puzzle" },
