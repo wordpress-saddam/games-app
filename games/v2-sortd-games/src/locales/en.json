@@ -9,6 +9,8 @@
     "trendingGames": "Trending Games",
     "continuePlaying": "Continue Playing",
     "featuredGames": "Featured Games",
+    "playNow": "Play Now",
+    "mostRead": "Most Read",
     "arabicGames": "Arabic Games",
     "loadingGames": "Loading games...",
     "leaderboard": "Leaderboard",
@@ -110,7 +112,10 @@
     "oneHourAgo": "1 hour ago",
     "hoursAgo": "{{count}} hours ago",
     "oneDayAgo": "1 day ago",
-    "daysAgo": "{{count}} days ago"
+    "daysAgo": "{{count}} days ago",
+    "asharqGames": "Asharq Games",
+    "games": "Games",
+    "readMoreAboutArticle": "Read more about this article"
   },
   "auth": {
     "login": "Login",
@@ -153,7 +158,12 @@
   "games": {
     "xox": {
       "name": "XOX Grid",
-      "description": "The classic game of X and O. Play against a friend or challenge the AI in this strategic battle."
+      "description": "The classic game of X and O. Play against a friend or challenge the AI in this strategic battle.",
+      "newWinner": "Player {{newWinner}} Wins! 🎉",
+      "congratulations": "Congratulations Player {{player}}!",
+      "youWon": "You Won!",
+      "opponentWon": "Opponent Won!",
+      "theGameEndedInATie": "The game ended in a tie."
     },
     "hungryTrail": {
       "name": "Hungry Trail",
@@ -172,9 +182,9 @@
       "scoringSystem": "SCORING SYSTEM:",
       "completeFullHeadlinesToEarnPoints": "Complete full headlines to earn points (1 point per article).",
       "completeSentencesToUnlockClickableArticlesWithImages": "Complete sentences to unlock clickable articles with images.",
-      "easy": "Easy:",
-      "medium": "Medium:",
-      "hard": "Hard:",
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
       "slowerSpeedGoodForBeginners": "Slower speed, good for beginners",
       "normalSpeedBalancedGameplay": "Normal speed, balanced gameplay",
       "fastSpeedChallengingExperience": "Fast speed, challenging experience",
@@ -249,7 +259,10 @@
     },
     "tileMerge": {
       "name": "Tile Merge Puzzle",
-      "description": "Combine tiles to reach 2048 in this addictive puzzle game that tests your strategy."
+      "description": "Combine tiles to reach 2048 in this addictive puzzle game that tests your strategy.",
+      "schemaDescription": "Play 2048 to test your logic skills!",
+      "youReached2048TileWithScore": "You reached the 2048 tile with a score of {{score}}!",
+      "noMoreMovesAvailableFinalScore": "No more moves available. Final score: {{score}}"
     },
     "fiveLetter": {
       "name": "5-Letter Guess",
@@ -374,6 +387,7 @@
       "score": "Score: {{score}}",
       "total": "Total: {{score}}",
       "wrongMax": "Wrong: {{current}}/{{max}}",
+      "goToHomePage": "Go to Home Page",
       "round": "Round: {{current}}/{{total}}",
       "hangman": "Hangman",
       "word": "Word",
@@ -384,7 +398,7 @@
       "correct": "Correct: ",
       "wrong": "Wrong: ",
       "reset": "Reset",
-      "nextWord": "Next Word →",
+      "nextWord": "Next Word",
       "playAgain": "Play Again",
       "readMoreAboutArticle": "Read More About Article:",
       "wordLabel": "Word: {{word}}",
@@ -396,7 +410,53 @@
     },
     "crossword": {
       "name": "Crossword",
-      "description": "Fill a 10×10 crossword grid using article-based clues in Arabic. With exciting intersections!"
+      "description": "Fill a 10×10 crossword grid using article-based clues in Arabic. With exciting intersections!",
+      "reset": "Reset",
+      "hintLetter": "Hint Letter",
+      "revealWord": "Reveal Word",
+      "revealFullSolution": "Reveal Full Solution",
+      "nextPuzzle": "Next Puzzle",
+      "help": "Help",
+      "howToPlay": "How to Play",
+      "howToPlayCrossword": "How to Play Crossword",
+      "fillCrosswordByTypingLetters": "Fill the crossword by typing letters. Use Space to switch between directions (across/down).",
+      "controls": "Controls",
+      "selectCell": "Select cell",
+      "clickACell": "Click a cell",
+      "enterALetter": "Enter a letter",
+      "arabicLetters": "Arabic letters",
+      "switchDirection": "Switch direction",
+      "space": "Space",
+      "navigate": "Navigate",
+      "arrowKeys": "Arrow keys",
+      "clearALetter": "Clear a letter",
+      "backspaceDel": "Backspace / Del",
+      "clues": "Clues",
+      "across": "Across",
+      "down": "Down",
+      "complete10x10Grid": "Complete the 10×10 grid by filling words from clues. There are up to 10 words; 5 across and 5 down. Words intersect where letters match.",
+      "scoring": "Scoring",
+      "basePoints": "Base points: 1000",
+      "penaltyPerSecond": "Penalty: -1 per second",
+      "penaltyPerHint": "Penalty: -50 per hint letter; revealing word costs letters/2 hints",
+      "tips": "Tips",
+      "clickCellToSelect": "Click a cell to select. Press Space to switch between directions.",
+      "useArrowKeysToNavigate": "Use arrow keys to navigate through the grid.",
+      "useCluesList": "Use the clues list; each clue can be linked to the source article.",
+      "gotIt": "Got it",
+      "wellDone": "Well Done!",
+      "youSolvedTheCrossword": "You solved the crossword!",
+      "time": "Time",
+      "hintsUsed": "Hints Used",
+      "newPuzzle": "New Puzzle",
+      "leaderboard": "Leaderboard",
+      "revealFullSolutionQuestion": "Reveal Full Solution?",
+      "areYouSureRevealSolution": "Are you sure you want to reveal the full solution? Your score will not be recorded if you do this.",
+      "yesRevealSolution": "Yes, Reveal Solution",
+      "cancel": "Cancel",
+      "solutionRevealed": "Solution Revealed!",
+      "fullSolutionRevealed": "The full solution to the puzzle has been revealed. You can now review the puzzle or move to the next puzzle.",
+      "reviewPuzzle": "Review Puzzle"
     },
     "sudokuArabic": {
       "name": "Arabic Sudoku",
@@ -430,7 +490,7 @@
       "youveFinishedAllAvailableGamesWellAddNewGamesSoon": "You've finished all available games. We'll add new games soon!",
       "replayTheseGames": "Replay These Games",
       "orWaitForNewGamesToBeAdded": "Or wait for new games to be added",
-      "totalAccumulatedScore": "Total Accumulated Score: {{score}}",
+      "totalAccumulatedScore": "Accumulated Score: {{score}}",
       "round": "Round: {{current}}/{{total}}",
       "yourAnswer": "Your Answer:",
       "dragWordsHereOrClickWordsBelowToBuildYourHeadline": "Drag words here or click words below to build your headline...",
@@ -447,7 +507,11 @@
     },
     "quiz": {
       "name": "Quiz",
-      "description": "Test your knowledge with a variety of questions in different categories!"
+      "description": "Test your knowledge with a variety of questions in different categories!",
+      "howToPlay": "How to Play",
+      "howToPlayDescription": "Select the correct answer from the available options. Submit your answer and proceed to the next question. Complete all questions to finish the game set.",
+      "instructions": "Answer the questions correctly to score points. Each correct answer increases your score.",
+      "readMoreAboutArticle": "Read more about this article"
     }
   },
   "errors": {

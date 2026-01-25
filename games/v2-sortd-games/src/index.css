@@ -137,7 +137,7 @@
 }
 
 .game-card {
-  @apply flex flex-col rounded-xl overflow-hidden transition-all duration-300 bg-card text-card-foreground border border-border shadow-md hover:shadow-xl;
+  @apply flex flex-col overflow-hidden transition-all duration-300 bg-card text-card-foreground border border-border shadow-md hover:shadow-xl;
   position: relative;
   
 }
@@ -217,4 +217,18 @@
 
 .custom-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Hide scrollbar for mobile navigation */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+.red-divider {
+  background-color: #C62426;
 }
