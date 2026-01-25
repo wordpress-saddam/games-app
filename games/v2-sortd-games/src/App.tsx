@@ -36,6 +36,7 @@ import ArticleLeaderboard from "./pages/games/ArticleLeaderboard";
 import { configUrl, defaultConfig } from "./config/site";
 import SnakeData from "./pages/games/SnakeData";
 import CrosswordGame from "./pages/games/CrosswordGame";
+import LinkGame from "./pages/games/DotsLink";
 
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const GAME_ROUTES = [
   { path: "/games/leaderboard", element: <LeaderBoard />, title: "Game Leaderboard" },
   { path: "/leaderboard", element: <ArticleLeaderboard />, title: "Article Leaderboard" },
   { path: "/games/crossword", element: <CrosswordGame />, title: "Crossword" },
+  { path: "/games/dots-link", element: <LinkGame />, title: "Dots Link" },
 ];
 
 const App = () => {

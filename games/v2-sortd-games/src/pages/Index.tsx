@@ -32,6 +32,7 @@ import Crossword_arabic from "../assets/crossword.png";
 import HangmanNew from "../assets/hangman.png";
 import quiz_arabic from "../assets/quiz.png";
 import GamesMainHeadline from "../components/ui/GamesMainHeadline";
+import DotsLink from "../assets/dots-link.png";
 
 const arabicDomains = [
   "asharqgames-uat.sortd.pro",
@@ -95,6 +96,12 @@ const gamesDataBase = [
     game_type: "mine-hunt",
     translationKey: "mineHunt",
     imageUrl: Mines
+  },
+  {
+    game_id: "d52f0dc7-1966-4a4e-bc89-f4e671c8a7cb",
+    game_type: "dots-link",
+    translationKey: "dotsLink",
+    imageUrl: DotsLink
   },
 ];
 
@@ -247,7 +254,7 @@ const Index = () => {
 
     fetchGames();
   }, [isCacheValid]);
-console.log("games : ", games);
+  console.log("games : ", games);
   const gamesSections = useMemo(() => {
     // const firstStaticGames = filteredGamesData.slice(0, 1);
     // const last = filteredGamesData.slice(1);
@@ -350,7 +357,7 @@ console.log("games : ", games);
   const greet = getGreeting();
   return (
     <Layout>
-      <section className="py-8">      
+      <section className="py-8">
         <div className="container mx-auto px-4">
           {/* Page Title */}
           {/* <div className="mb-8 text-center">
@@ -455,14 +462,14 @@ console.log("games : ", games);
                           key={game.game_type}
                           className="pl-2 md:pl-4 basis-full sm:basis-1/2"
                         >
-                      <GameCardStatic
-                        id={game.game_type}
-                        title={game.display_name}
-                        description={game?.desc}
-                        imageUrl={game.imageUrl}
-                        search={searchParams.toString()}
-                        translationKey={game.translationKey}
-                      />
+                          <GameCardStatic
+                            id={game.game_type}
+                            title={game.display_name}
+                            description={game?.desc}
+                            imageUrl={game.imageUrl}
+                            search={searchParams.toString()}
+                            translationKey={game.translationKey}
+                          />
                         </CarouselItem>
                       ))}
                     </CarouselContent>

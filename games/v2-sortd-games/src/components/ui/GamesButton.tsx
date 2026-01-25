@@ -241,6 +241,41 @@ export const PlayAgainButtonTopRounded = (props) => {
   );
 };
 
+export const NextButtonTopRounded = (props) => {
+  const { onClick, children, disabled } = props;
+  return (
+    <Button
+      size="sm"
+      onClick={onClick}
+      disabled={disabled}
+      className="
+        gap-4 px-10 py-6 
+        bg-[#6AAFE6] 
+        text-white 
+        rounded-tl-[8px] 
+        rounded-tr-[8px] 
+        rounded-br-none 
+        rounded-bl-none 
+        font-[700] 
+        text-[18px] 
+        leading-[100%] 
+        text-center 
+        align-middle 
+        hover:bg-[#6AAFE6] 
+        disabled:opacity-80 
+        disabled:cursor-not-allowed 
+        transition-all 
+        duration-200 
+        shadow-lg 
+        hover:shadow-xl 
+        transform 
+        hover:scale-105"
+    >
+      {children}
+    </Button>
+  );
+};
+
 export const UndoButtonTopRounded = (props) => {
   const { onClick, children, disabled } = props;
   return (
