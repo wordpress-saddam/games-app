@@ -7,7 +7,7 @@ import { useToast } from "../../hooks/use-toast";
 import BackToHome from "../../components/ui/BackToHome";
 import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
 import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
-import { ResetButtonTopRounded } from "../../components/ui/GamesButton";
+import { LightButton, ResetButtonTopRounded } from "../../components/ui/GamesButton";
 import HumanIcon from "../../components/ui/HumanIcon";
 import ComputerIcon from "../../components/ui/ComputerIcon";
 import { RefreshCw, Users, User } from 'lucide-react';
@@ -18,6 +18,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import LudoImage from "../../assets/ludo.png";
 
 // Game Types and Constants
 type PlayerColor = 'red' | 'green' | 'yellow' | 'blue';
@@ -286,121 +287,143 @@ const Ludo = () => {
 
     return (
         <Layout>
-            <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
+            <section className="py-8">
                 <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
-                    <div className="game-container3 text-center">
-                        {/* Header */}
-                        <div className="mb-6">
-                            <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
-                            <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`}>
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-2xl md:text-3xl font-bold">{t("games.ludo.name")}</h2>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <BackToHome text={t("common.backToHome")} />
-                                </div>
-                            </div>
-                            <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
-                        </div>
-
-                        <div className="flex flex-col lg:flex-row gap-8 mt-8 items-start justify-center">
-                            {/* Game Board Area */}
-                            <div className="flex-1 max-w-[600px] mx-auto bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg p-4">
-
-                                <div className="mb-4 flex justify-between items-center bg-gray-100 p-2 rounded">
-                                    <div className="font-bold flex items-center gap-2">
-                                        {t('games.ludo.playerTurn', { player: t(`games.ludo.${players[currentPlayerIndex]?.color}`) })}
-                                        <div className={`w-4 h-4 rounded-full bg-${players[currentPlayerIndex]?.color}-500 inline-block ring-2 ring-offset-1`}></div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="text-xl font-bold bg-white px-4 py-2 rounded shadow min-w-[3rem] text-center">
-                                            {isRolling ? <RefreshCw className="animate-spin h-6 w-6 inline" /> : (diceValue || <span className="opacity-50">🎲</span>)}
+                    <div className="game-container3">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+                            {/* Main Content: Games Grid - Takes 2 columns on large screens */}
+                            <div className="lg:col-span-2">
+                                {/* Header */}
+                                <div className="mb-6">
+                                    <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+                                    <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`}>
+                                        <div className="flex items-center gap-2">
+                                            <img src={LudoImage} alt="Ludo" className="w-20 h-20" />
+                                            <h2 className="text-2xl md:text-3xl font-bold">{t("games.ludo.name")}</h2>
                                         </div>
-                                        <Button
-                                            onClick={rollDice}
-                                            disabled={!waitingForRoll || players[currentPlayerIndex]?.isComputer || !!winner}
-                                            className={`${players[currentPlayerIndex]?.color === 'red' ? 'bg-red-500 hover:bg-red-600' :
-                                                players[currentPlayerIndex]?.color === 'green' ? 'bg-green-500 hover:bg-green-600' :
-                                                    players[currentPlayerIndex]?.color === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-600' :
-                                                        'bg-blue-500 hover:bg-blue-600'} text-white`}
-                                        >
-                                            {t('games.ludo.roll')}
-                                        </Button>
+                                        <div className="flex items-center gap-4">
+                                            <BackToHome text={t("common.backToHome")} />
+                                        </div>
                                     </div>
                                 </div>
 
-                                <LudoBoard
-                                    players={players}
-                                    onTokenClick={handleTokenClick}
-                                    currentPlayerColor={players[currentPlayerIndex]?.color}
-                                    canMove={waitingForMove && !players[currentPlayerIndex]?.isComputer}
-                                />
+                                <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
 
+                                <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
+                                    {/* Score and Round Info */}
+                                    <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+
+                                        <div className="flex items-center gap-2">
+                                            {/* Help Button */}
+                                            <LightButton onClick={() => { setSelectionStep('mode'); setShowModeDialog(true); }}>
+                                                {t("common.help")}
+                                            </LightButton>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {/* Game Mode Button */}
+                                            <LightButton onClick={() => { setSelectionStep('mode'); setShowModeDialog(true); }}>
+                                                {gameMode === "human-vs-computer"
+                                                    ? t("common.vsComputer")
+                                                    : t("common.vsHuman")}
+                                                {gameMode === "human-vs-computer" ? (
+                                                    <ComputerIcon classes="h-[24px] w-[24px]" />
+                                                ) : (
+                                                    <HumanIcon classes="h-[24px] w-[24px]" />
+                                                )}
+                                            </LightButton>
+                                        </div>
+                                    </div>
+                                    {/* Game Board Area */}
+                                    <div className="flex-1 max-w-[600px] mx-auto bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg p-4 m-4">
+                                        {/* <div className="grid grid-cols-3 gap-4 aspect-square max-w-xs mx-auto my-5"> */}
+                                        <div className="mb-4 flex justify-between items-center bg-gray-100 p-2 rounded">
+                                            <div className="font-bold flex items-center gap-2">
+                                                {t('games.ludo.playerTurn', { player: t(`games.ludo.${players[currentPlayerIndex]?.color}`) })}
+                                                <div className={`w-4 h-4 rounded-full bg-${players[currentPlayerIndex]?.color}-500 inline-block ring-2 ring-offset-1`}></div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-xl font-bold bg-white px-4 py-2 rounded shadow min-w-[3rem] text-center">
+                                                    {isRolling ? <RefreshCw className="animate-spin h-6 w-6 inline" /> : (diceValue || <span className="opacity-50">🎲</span>)}
+                                                </div>
+                                                <Button
+                                                    onClick={rollDice}
+                                                    disabled={!waitingForRoll || players[currentPlayerIndex]?.isComputer || !!winner}
+                                                    className={`${players[currentPlayerIndex]?.color === 'red' ? 'bg-red-500 hover:bg-red-600' :
+                                                        players[currentPlayerIndex]?.color === 'green' ? 'bg-green-500 hover:bg-green-600' :
+                                                            players[currentPlayerIndex]?.color === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-600' :
+                                                                'bg-blue-500 hover:bg-blue-600'} text-white`}
+                                                >
+                                                    {t('games.ludo.roll')}
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <LudoBoard
+                                            players={players}
+                                            onTokenClick={handleTokenClick}
+                                            currentPlayerColor={players[currentPlayerIndex]?.color}
+                                            canMove={waitingForMove && !players[currentPlayerIndex]?.isComputer}
+                                        />
+
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Sidebar */}
-                            <div className="w-full lg:w-80 space-y-4">
-                                <HowToPlayInstruction title={t("common.howToPlay")} text="">
-                                    <ul className="list-disc pl-5 text-sm space-y-2 text-white">
-                                        <li>{t('games.ludo.rollSixToStart')}</li>
-                                        <li>{players.length} {t('games.ludo.selectPlayers')}</li>
-                                    </ul>
-                                </HowToPlayInstruction>
-
-                                <div className="bg-white p-4 rounded shadow border">
-                                    <h3 className="font-bold mb-2">{t('games.ludo.description')}</h3>
-                                    <Button variant="outline" className="w-full mb-2" onClick={() => { setSelectionStep('mode'); setShowModeDialog(true); }}>
-                                        {t('games.ludo.selectMode')}
-                                    </Button>
-                                    <ResetButtonTopRounded onClick={() => { setSelectionStep('mode'); setShowModeDialog(true); }} className='w-full justify-center'>
-                                        {t("common.newGame")}
-                                    </ResetButtonTopRounded>
+                            <div className="lg:col-span-1">
+                                {/* Sidebar */}
+                                <div className="w-full lg:w-80 space-y-4">
+                                    <HowToPlayInstruction title={t("common.howToPlay")} text="">
+                                        <ul className="list-disc pl-5 text-sm space-y-2 text-white">
+                                            <li>{t('games.ludo.rollSixToStart')}</li>
+                                            <li>{players.length} {t('games.ludo.selectPlayers')}</li>
+                                        </ul>
+                                    </HowToPlayInstruction>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Selection Dialog */}
+                <Dialog open={showModeDialog} onOpenChange={setShowModeDialog}>
+                    <DialogContent dir={isArabic ? "rtl" : "ltr"}>
+                        <DialogHeader>
+                            <DialogTitle>
+                                {selectionStep === 'mode' ? t("games.ludo.selectMode") : t("games.ludo.selectPlayers")}
+                            </DialogTitle>
+                        </DialogHeader>
+
+                        {selectionStep === 'mode' ? (
+                            <div className="grid grid-cols-1 gap-4 mt-4">
+                                <Button onClick={() => handleModeSelect('human-vs-computer')} className="h-16 text-lg justify-start gap-4" variant="outline">
+                                    <ComputerIcon /> {t("games.ludo.humanVsComputer")}
+                                </Button>
+                                <Button onClick={() => handleModeSelect('human-vs-human')} className="h-16 text-lg justify-start gap-4" variant="outline">
+                                    <HumanIcon /> {t("games.ludo.humanVsHuman")}
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-3 gap-4 mt-4">
+                                <Button onClick={() => initGame(tempMode, 2)} className="h-20 text-xl flex-col gap-2" variant="outline">
+                                    <Users className="h-6 w-6" />
+                                    {t("games.ludo.twoPlayers")}
+                                </Button>
+                                <Button onClick={() => initGame(tempMode, 3)} className="h-20 text-xl flex-col gap-2" variant="outline">
+                                    <Users className="h-6 w-6" />
+                                    3 Players
+                                </Button>
+                                <Button onClick={() => initGame(tempMode, 4)} className="h-20 text-xl flex-col gap-2" variant="outline">
+                                    <Users className="h-6 w-6" />
+                                    {t("games.ludo.fourPlayers")}
+                                </Button>
+                                <Button variant="ghost" onClick={() => setSelectionStep('mode')} className="col-span-3 text-sm text-gray-500">
+                                    {t("common.backToHome")}
+                                </Button>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </section>
-
-            {/* Selection Dialog */}
-            <Dialog open={showModeDialog} onOpenChange={setShowModeDialog}>
-                <DialogContent dir={isArabic ? "rtl" : "ltr"}>
-                    <DialogHeader>
-                        <DialogTitle>
-                            {selectionStep === 'mode' ? t("games.ludo.selectMode") : t("games.ludo.selectPlayers")}
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    {selectionStep === 'mode' ? (
-                        <div className="grid grid-cols-1 gap-4 mt-4">
-                            <Button onClick={() => handleModeSelect('human-vs-computer')} className="h-16 text-lg justify-start gap-4" variant="outline">
-                                <ComputerIcon /> {t("games.ludo.humanVsComputer")}
-                            </Button>
-                            <Button onClick={() => handleModeSelect('human-vs-human')} className="h-16 text-lg justify-start gap-4" variant="outline">
-                                <HumanIcon /> {t("games.ludo.humanVsHuman")}
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-3 gap-4 mt-4">
-                            <Button onClick={() => initGame(tempMode, 2)} className="h-20 text-xl flex-col gap-2" variant="outline">
-                                <Users className="h-6 w-6" />
-                                {t("games.ludo.twoPlayers")}
-                            </Button>
-                            <Button onClick={() => initGame(tempMode, 3)} className="h-20 text-xl flex-col gap-2" variant="outline">
-                                <Users className="h-6 w-6" />
-                                3 Players
-                            </Button>
-                            <Button onClick={() => initGame(tempMode, 4)} className="h-20 text-xl flex-col gap-2" variant="outline">
-                                <Users className="h-6 w-6" />
-                                {t("games.ludo.fourPlayers")}
-                            </Button>
-                            <Button variant="ghost" onClick={() => setSelectionStep('mode')} className="col-span-3 text-sm text-gray-500">
-                                {t("common.backToHome")}
-                            </Button>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
         </Layout>
     );
 };

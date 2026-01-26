@@ -193,6 +193,23 @@
       "rollSixToStart": "Roll a 6 to start!",
       "extraTurn": "Extra turn!"
     },
+    "chess": {
+      "name": "Chess",
+      "description": "The strategic game of kings and queens. Checkmate your opponent!",
+      "whiteTurn": "White's Turn",
+      "blackTurn": "Black's Turn",
+      "check": "Check!",
+      "checkmate": "Checkmate! {{winner}} Wins! 🎉",
+      "draw": "Draw! StaleMate or Insufficient Material.",
+      "newGame": "New Game",
+      "vsComputer": "vs Computer",
+      "vsHuman": "vs Human",
+      "selectMode": "Select Mode",
+      "white": "White",
+      "black": "Black",
+      "promotion": "Pawn Promotion",
+      "choosePiece": "Choose a piece:"
+    },
     "hungryTrail": {
       "name": "Hungry Trail",
       "description": "Guide your snake to eat food and grow longer, but be careful not to bite your own tail!",

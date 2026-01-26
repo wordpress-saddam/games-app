@@ -362,7 +362,7 @@ const TicTacToe = () => {
 
   return (
     <Layout>
-      <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
+      <section className="py-8">
         <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
           <div className="game-container3" translate="no">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">

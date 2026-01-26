@@ -33,6 +33,8 @@ import HangmanNew from "../assets/hangman.png";
 import quiz_arabic from "../assets/quiz.png";
 import GamesMainHeadline from "../components/ui/GamesMainHeadline";
 import DotsLink from "../assets/dots-link.png";
+import Ludo from "../assets/ludo.png";
+import Chess from "../assets/chess.png";
 
 const arabicDomains = [
   "asharqgames-uat.sortd.pro",
@@ -102,6 +104,18 @@ const gamesDataBase = [
     game_type: "dots-link",
     translationKey: "dotsLink",
     imageUrl: DotsLink
+  },
+  {
+    game_id: "d52f0dc7-1966-4a4e-bc89-f4e671c8a7cb",
+    game_type: "ludo",
+    translationKey: "ludo",
+    imageUrl: Ludo
+  },
+  {
+    game_id: "d52f0dc7-1966-4a4e-bc89-f4e671c8a7cb",
+    game_type: "chess",
+    translationKey: "chess",
+    imageUrl: Chess
   },
 ];
 
