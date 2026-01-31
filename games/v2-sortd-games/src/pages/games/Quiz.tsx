@@ -671,7 +671,7 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
         sort_order: "desc",
         score_type: "max",
       }).toString()}`
-    : `/games/leaderboard?${new URLSearchParams({
+    : `/leaderboard?${new URLSearchParams({
         name: leaderboardName,
         duration: "month",
         game_type: leaderboardGameType,
@@ -706,10 +706,10 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
     if (!isAnswered) {
       if (selectedAnswer === option) {
         baseClass +=
-          "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300";
+          "border-blue-500 dark:border-blue-500";
       } else {
         baseClass +=
-          "border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600 dark:hover:bg-gray-800";
+          "border-gray-200 dark:border-gray-700";
       }
     } else {
       if (option === currentQuestion.answer) {
@@ -960,18 +960,18 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
     <section className="py-8">
       <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
         <div className="game-container3" translate="no">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
             {/* Main Content: Games Grid - Takes 2 columns on large screens */}
             <div className="lg:col-span-2">
               {/* Header Section */}
               <div className="mb-6" translate="no">
                 <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
-                <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                <div className={`flex flex-col gap-4 mb-4 px-2 md:flex-row md:items-center md:justify-between ${isArabic ? "text-right" : "text-left"}`} translate="no">
                   <div className="flex items-center gap-2">
                     <img src={QuizImage} alt="Quiz Logo" className="w-20 h-20" />
-                    <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("quiz.quiz")}</h2>
+                    <h2 className="text-xl md:text-3xl font-bold" translate="no">{t("quiz.quiz")}</h2>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex w-full md:w-auto md:flex-row gap-2">
                     {/* Leaderboard Button */}
                     {!user?.isAnonymous && (
                       isArticleView ? (
@@ -1038,7 +1038,7 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
               {!allGamesCompleted && (
                 <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden flex flex-col min-h-[450px] mt-8" translate="no">
                   {/* Score and Round Info */}
-                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE]">
                     <div className="flex items-center gap-2">
                       {/* Round Indicator */}
                       <BlueButton>
@@ -1081,7 +1081,7 @@ const Quiz: React.FC<QuizProps> = ({ gameData, article = false, hideArticleLink 
                     </div>
 
                     <div className="mb-5">
-                      <h2 className="mb-4 leading-relaxed py-6 font-bold text-[18px] leading-[40px] text-black">
+                      <h2 className="mb-4 leading-relaxed py-6 font-bold text-[18px] leading-[40px] text-black text-foreground">
                         {currentQuestion.question}
                       </h2>
 

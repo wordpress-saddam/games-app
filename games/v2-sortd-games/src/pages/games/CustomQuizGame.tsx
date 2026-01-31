@@ -8,7 +8,7 @@ const CustomQuizGame = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const segments = location.pathname.split("/");
-  const gameType = segments[2]; // expecting custom_quiz
+  const gameType = segments[1]; // expecting custom_quiz
   const gameId = searchParams.get("id");
 
   const [gameData, setGameData] = useState([]);

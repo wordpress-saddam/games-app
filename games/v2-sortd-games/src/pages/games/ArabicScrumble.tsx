@@ -36,6 +36,8 @@ import ArrowTransparent from "../../assets/arrow-transparent.png";
 import BackToHome from "../../components/ui/BackToHome";
 import LeaderboardButton from "../../components/ui/LeaderboardButton";
 import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
+import ReadmoreArticleWidget from "../../components/ui/ReadmoreArticleWidget";
+import { CheckAnswerButtonTopRounded, ResetButtonTopRounded, NextButtonTopRounded, PlayAgainButtonTopRounded } from "@/components/ui/GamesButton";
 
 declare global {
   interface Window {
@@ -682,7 +684,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
         sort_order: "desc",
         score_type: "sum",
       }).toString()}`
-    : `/games/leaderboard?${new URLSearchParams({
+    : `/leaderboard?${new URLSearchParams({
         name: t("games.headlineScramble.name"),
         duration: "month",
         game_type: "headline_scramble",
@@ -929,17 +931,17 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
       )}
 
       <div className="game-container3" translate="no">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8"> {/* Main Content: Games Grid + Most Read Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 "> {/* Main Content: Games Grid + Most Read Sidebar */}
         <div className="lg:col-span-2"> {/* Games Grid - Takes 2 columns on large screens */}
         {/* Header Section */}
         <div className="mb-6" translate="no">  
         <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
-          <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+          <div className={`flex flex-col gap-4 mb-4 px-2 md:flex-row md:items-center md:justify-between ${isArabic ? "text-right" : "text-left"}`} translate="no">
             <div className="flex items-center gap-2">
               <img src={ScrambleArabic} alt="Sortd Logo" className="w-20 h-20" />
-              <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.headlineScramble.name")}</h2>
+              <h2 className="text-xl md:text-3xl font-bold" translate="no">{t("games.headlineScramble.name")}</h2>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex w-full md:w-auto md:flex-row gap-2">
             {/* Leaderboard Button */}
             {!user?.isAnonymous && (
             isArticleView ? (
@@ -1018,12 +1020,12 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
         {!(allGamesCompleted && hasDeclinedReplay && !isArticleView) && (
           <div className="flex flex-col md:flex-row w-full gap-4 mt-8" translate="no">
             <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden pb-0 w-full md:w-[100%]" translate="no">
-            <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+            <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE]">
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-[#63AAE4] text-white font-[700] text-[16px] rounded-[100px] border-none hover:bg-[#63AAE4] hover:text-white"
+                    className="bg-[#63AAE4] text-white font-[700] text-[12px] md:text-[16px] rounded-[100px] border-none hover:bg-[#63AAE4] hover:text-white"
                   >
                     {t("games.headlineScramble.round", {
                       current: currentGameIndex + 1,
@@ -1034,7 +1036,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowInstructions(true)}
-                    className="bg-white text-black font-[700] text-[16px]  text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
+                    className="bg-white text-black font-[700] text-[12px] md:text-[16px] text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
                   >{t("common.help")}
                   <HelpCircle className="mr-1 h-4 w-4" />
                   </Button>
@@ -1043,7 +1045,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-[#C62426] text-white font-[700] text-[16px] hover:bg-[#C62426] hover:text-white border-none"
+                    className="bg-[#C62426] text-white font-[700] text-[12px] md:text-[16px] hover:bg-[#C62426] hover:text-white border-none"
                   >
                     {t("games.headlineScramble.totalAccumulatedScore", {
                       score: accumulatedScore,
@@ -1147,65 +1149,12 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
 
               {/* Result Display */}
               {showResult && !isArticleView && currentGame?.article_detail && (
-                <div className="py-3 px-3">
-                <a
-                  href={addUtmParams(currentGame?.article_detail?.link || "")}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex mb-4 items-start gap-4 p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 hover:shadow-md transition-shadow"
-                >
-                  <div className="w-24 sm:w-28 md:w-32 lg:w-40 flex items-center justify-center h-[80px] sm:h-[100px]">
-                    <img
-                      src={currentGame?.article_detail?.image_url}
-                      alt="صورة المقال"
-                      className="h-full w-full object-cover rounded-md"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          "https://idea410.digital.uic.edu/wp-content/themes/koji/assets/images/default-fallback-image.png";
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <h3 
-                      className="
-                        font-bold
-                        text-[18px] leading-[40px]
-                        text-black
-                        text-right
-                      "
-                    >
-                      {t("games.headlineScramble.readMoreAboutArticle")}
-                    </h3>
-                    <p
-                      className="
-                        font-bold
-                        text-[18px] leading-[40px]
-                        text-black
-                        text-right
-                        cursor-pointer
-                        hover:underline
-                      "
-                    >
-                      {currentGame?.data?.headline}
-
-                      <span className="mr-2 inline-flex align-middle">
-                        <ExternalLink
-                          className="w-5 h-5 font-bold text-[18px] leading-[40px] align-middle text-[#C62426]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(
-                              addUtmParams(currentGame?.article_detail?.link || ""),
-                              "_blank"
-                            );
-                          }}
-                        />
-                      </span>
-                    </p>
-
-                  </div>
-                </a>
+                <div className="px-6 py-3 flex-1 overflow-y-auto">
+                <ReadmoreArticleWidget article_detail={{
+                  title: currentGame?.data?.headline,
+                  link: currentGame?.article_detail?.link,
+                  image_url: currentGame?.article_detail?.image_url,
+                }} />
                 </div>
               )}
 
@@ -1221,68 +1170,20 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
               <div className="flex flex-wrap gap-3 justify-center pt-4" translate="no">
                 {!isCompleted ? (
                   <>
-                    <button
-                      onClick={checkAnswer}
-                      disabled={userAnswer.length === 0}
-                      className="flex items-center gap-4 px-5 py-4 bg-[#55B45C] text-white rounded-tl-[8px] rounded-tr-[8px] rounded-br-none rounded-bl-none font-[700]
-                      text-[18px] leading-[100%] text-center align-middle hover:bg-[#55B45C] disabled:opacity-80 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                      translate="no"
-                    >
+                    <CheckAnswerButtonTopRounded onClick={checkAnswer} disabled={userAnswer.length === 0}>
                       {t("games.headlineScramble.submit")}
-                      <img src={CheckedWhiteIcon} alt="Checked White Icon" className="w-6 h-6 mr-1" />
-                    </button>
+                    </CheckAnswerButtonTopRounded>
 
-                    <button
-                      onClick={resetCurrentGame}
-                      className="
-                        flex items-center justify-center gap-2
-                        px-5 py-2
-                        bg-[#9B9B9B] text-white
-                        rounded-tl-[8px] rounded-tr-[8px] rounded-bl-none rounded-br-none
-                        font-[700]
-                        text-[18px] leading-[100%]
-                        text-center align-middle
-                        hover:bg-[#9B9B9B]
-                        transition-all duration-200
-                        shadow-lg hover:shadow-xl
-                        transform hover:scale-105
-                      "
-                      translate="no"
-                    >
+                    <ResetButtonTopRounded onClick={resetCurrentGame} disabled={false}>
                       {t("games.headlineScramble.reset")}
-                    </button>
-
+                    </ResetButtonTopRounded>
                   </>
                 ) : !isArticleView ? (
-                  <button
-                    onClick={nextHeadline}
-                    className="flex items-center gap-4 px-5 py-4 bg-[#6AAFE6] text-white rounded-tl-[8px] rounded-tr-[8px] rounded-br-none rounded-bl-none font-[700]
-                      text-[18px] leading-[100%] text-center align-middle hover:bg-[#6AAFE6] disabled:opacity-80 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                    translate="no"
-                  >
-                    {t("games.headlineScramble.next")}
-                    <img src={ArrowTransparent} alt="Arrow Transparent" className="w-5 h-5 ml-2" />
-                  </button>
-
+                  <NextButtonTopRounded onClick={nextHeadline} disabled={false}>{t("games.headlineScramble.next")}</NextButtonTopRounded>
                 ) : (
-                  <button
-                  onClick={handleReplayConfirm}
-                    className="
-                      px-8 py-3
-                      bg-[#6AAFE6]
-                      text-white
-                      rounded-[8px]
-                      font-extrabold
-                      text-[16px]
-                      leading-none
-                      transition-colors duration-200
-                      hover:bg-[#5A9FD8]
-                    "
-                    translate="no"
-                  >
+                  <PlayAgainButtonTopRounded onClick={handleReplayConfirm} disabled={false}>
                     {t("games.headlineScramble.playAgain")}
-                    <img src={ArrowTransparent} alt="Arrow Transparent" className="w-5 h-5 ml-2" />
-                  </button>
+                  </PlayAgainButtonTopRounded>
                 )}
               </div>
             </div>

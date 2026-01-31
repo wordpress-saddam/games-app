@@ -26,7 +26,7 @@ import SnakeImage from "../../assets/hungry-trail.png";
 import BackToHome from "../../components/ui/BackToHome";
 import LeaderboardButton from "../../components/ui/LeaderboardButton";
 import HowToPlayInstruction from "../../components/ui/HowToPlayInstruction";
-import { LightButton, BlueButton, ResetButtonTopRounded } from "../../components/ui/GamesButton";
+import { LightButton, BlueButton, ResetButtonTopRounded, ResetButton } from "../../components/ui/GamesButton";
 import ExternalLinkIconImage from "../../assets/link-icon.png";
 import {
   Dialog,
@@ -926,7 +926,7 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
     }
   };
 
-  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+  const leaderboardUrl = `/leaderboard?${new URLSearchParams({
     name: t("games.hungryTrail.name"),
     duration: "month",
     game_type: "hungry-trail",
@@ -1099,18 +1099,18 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
           )}
 
           <div className="game-container3" translate="no">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
               {/* Main Content: Games Grid - Takes 2 columns on large screens */}
               <div className="lg:col-span-2">
                 {/* Header Section */}
                 <div className="mb-6" translate="no">
                   <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
-                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                  <div className={`flex flex-col gap-4 mb-4 px-2 md:flex-row md:items-center md:justify-between ${isArabic ? "text-right" : "text-left"}`} translate="no">
                     <div className="flex items-center gap-2">
                       <img src={SnakeImage} alt="Snake Logo" className="w-20 h-20" />
-                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.hungryTrail.name")}</h2>
+                      <h2 className="text-xl md:text-3xl font-bold" translate="no">{t("games.hungryTrail.name")}</h2>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex w-full md:w-auto md:flex-row gap-2">
                       {/* Leaderboard Button */}
                       {!user?.isAnonymous && (
                         <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
@@ -1125,7 +1125,7 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
 
                 <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
                   {/* Score and Round Info */}
-                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE]">
                     <div className="flex items-center gap-2">
                       {/* Difficulty Button */}
                       <BlueButton onClick={() => setShowDifficultyDialog(true)}>
@@ -1152,27 +1152,8 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full min-h-0">
-
-                    <div className="col-span-1">
-                      {/* Word Progress Card - Fixed Height */}
-                      <div className="h-full min-h-0 flex flex-col p-8">
-                        <div className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <div className="font-[700] text-[18px] leading-[100%] text-center align-middle">
-                              {t("common.youHaveUnlocked")} {score} {score === 1 ? t("common.story") : t("common.stories")}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col">
-                          <div className="h-full min-h-0 flex-1 space-y-4 overflow-hidden">
-                            {renderCompletedSentences()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`col-span-1 border-border ${isArabic ? 'border-r' : 'border-l'}`}>  
+                  <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] h-full min-h-0">
+                    <div className={`col-span-1 border-border ${isArabic ? 'border-l' : 'border-r'}`}>  
                       <div className="bg-muted/50 p-2">{renderCurrentSentence()}</div>
                       
                       <div className="pt-4">
@@ -1224,13 +1205,31 @@ const SnakeGame: React.FC<SnakeProps> = ({ gameData }) => {
                         </div>
 
                         {gameOver && (
-                          <div className="text-center">
-                            <ResetButtonTopRounded onClick={resetGame} >
+                          <div className="text-center flex justify-center pb-4">
+                            <ResetButton onClick={resetGame} >
                               {t("common.playAgain")}
-                              <RefreshCw className="h-4 w-4" />
-                            </ResetButtonTopRounded>
+                            </ResetButton>
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    <div className="col-span-1">
+                      {/* Word Progress Card - Fixed Height */}
+                      <div className="h-full min-h-0 flex flex-col p-8">
+                        <div className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="font-[700] text-[18px] leading-[100%] text-center align-middle">
+                              {t("common.youHaveUnlocked")} {score} {score === 1 ? t("common.story") : t("common.stories")}
+                            </div>
+                          </div>
+                        </div>
+                        {/* Unlocked Articles Card */}
+                        <div className="flex flex-col">
+                          <div className="h-full min-h-0 flex-1 space-y-4 overflow-hidden">
+                            {renderCompletedSentences()}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

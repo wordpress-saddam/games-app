@@ -12,7 +12,7 @@ const LightButton: React.FC<LightButtonProps> = ({ onClick, children }) => {
     <Button
         variant="outline"
         size="sm"
-        className="bg-white text-black font-[700] text-[16px] text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
+        className="bg-white text-black font-[700] text-[12px] md:text-[16px] text-right rounded-[100px] flex items-center gap-2 border border-transparent hover:bg-white hover:text-black"
         onClick={onClick}
     >
       {children}

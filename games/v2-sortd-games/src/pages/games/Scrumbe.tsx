@@ -617,7 +617,7 @@ const Scramble: React.FC<ScrambleProps> = ({ gameData }) => {
       sort_order: "desc",
       score_type: "sum",
     }).toString()}`
-    : `/games/leaderboard?${new URLSearchParams({
+    : `/leaderboard?${new URLSearchParams({
       name: "HeadLine Scramble",
       duration: "month",
       game_type: "headline_scramble",

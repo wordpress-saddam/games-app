@@ -30,7 +30,6 @@ import {
 import GamesServices from "../../../v2-services/games-service";
 import { useUser } from "../../context/UserContext";
 import { useTranslation } from "react-i18next";
-import { formatNumber } from "../../utils/numberFormatter";
 import { useGameSchema } from "../../hooks/useGameSchema";
 import GamesMainHeadline from "../../components/ui/GamesMainHeadline";
 import BackToHome from "../../components/ui/BackToHome";
@@ -86,13 +85,6 @@ const TETRIMINOS = {
   },
 };
 
-type TetriminoType = keyof typeof TETRIMINOS;
-
-function getRandomTetrimino(): TetriminoType {
-  const types: TetriminoType[] = Object.keys(TETRIMINOS) as TetriminoType[];
-  return types[Math.floor(Math.random() * types.length)];
-}
-
 const TetrisGame = () => {
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === 'ar';
@@ -138,6 +130,19 @@ const TetrisGame = () => {
     : "https://asharqgames-uat.sortd.pro";
   const gameUrl = `${baseUrl}${location.pathname}${location.search ? location.search : ""}`;
   const gameName = "Tetris";
+
+  // const isRTL =
+  // typeof document !== "undefined" &&
+  // document.documentElement.dir === "rtl";
+
+  const normalizeDx = (dx: number) => (isArabic ? -dx : dx);
+
+  type TetriminoType = keyof typeof TETRIMINOS;
+
+  function getRandomTetrimino(): TetriminoType {
+    const types: TetriminoType[] = Object.keys(TETRIMINOS) as TetriminoType[];
+    return types[Math.floor(Math.random() * types.length)];
+  }
   
   useGameSchema(
     {
@@ -343,18 +348,18 @@ const TetrisGame = () => {
     rotate: boolean = false
   ): boolean => {
     if (!currentTetrimino || paused || gameOver || !gameStarted) return false;
-
+  
     const newPosition = {
       x: currentTetrimino.position.x + dx,
       y: currentTetrimino.position.y + dy,
     };
-
+  
     const newRotation = rotate
       ? (currentTetrimino.rotation + 1) % 4
       : currentTetrimino.rotation;
-
+  
     const shape = TETRIMINOS[currentTetrimino.type].shape;
-
+  
     if (!checkCollision(shape, newPosition, newRotation)) {
       setCurrentTetrimino({
         ...currentTetrimino,
@@ -363,13 +368,12 @@ const TetrisGame = () => {
       });
       return true;
     }
-
+  
     if (dy > 0) {
-      console.log("Tetrimino landed, updating board");
       updateBoard();
       return false;
     }
-
+  
     return false;
   };
 
@@ -476,10 +480,10 @@ const TetrisGame = () => {
 
       switch (e.key) {
         case "ArrowLeft":
-          moveTetrimino(-1, 0);
+          moveTetrimino(normalizeDx(-1), 0);
           break;
         case "ArrowRight":
-          moveTetrimino(1, 0);
+          moveTetrimino(normalizeDx(1), 0);
           break;
         case "ArrowDown":
           moveTetrimino(0, 1);
@@ -638,7 +642,7 @@ const TetrisGame = () => {
     );
   };
 
-  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+  const leaderboardUrl = `/leaderboard?${new URLSearchParams({
     name: "Block Drop Puzzle",
     duration: "month",
     game_type: "block-drop",
@@ -665,18 +669,18 @@ const TetrisGame = () => {
       <section className="py-8" style={{ fontFamily: "'Noto Naskh Arabic', system-ui, sans-serif" }}>
         <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
           <div className="game-container3" translate="no">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
               {/* Main Content: Games Grid - Takes 2 columns on large screens */}
               <div className="lg:col-span-2">
                 {/* Header Section */}
                 <div className="mb-6" translate="no">
                   <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
-                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                  <div className={`flex flex-col gap-4 mb-4 px-2 md:flex-row md:items-center md:justify-between ${isArabic ? "text-right" : "text-left"}`} translate="no">
                     <div className="flex items-center gap-2">
                       <img src={TetrisImage} alt="Tetris Logo" className="w-20 h-20" />
-                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.blockDrop.name")}</h2>
+                      <h2 className="text-xl md:text-3xl font-bold" translate="no">{t("games.blockDrop.name")}</h2>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex w-full md:w-auto md:flex-row gap-2">
                       {/* Leaderboard Button */}
                       {!user?.isAnonymous && (
                         <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
@@ -691,8 +695,13 @@ const TetrisGame = () => {
 
                 <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
                   {/* Score and Round Info */}
-                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE]">
                     <div className="flex items-center gap-2">
+                      {/* Reset Button */}
+                      <LightButton onClick={resetGame}>
+                        {t("common.reset")}
+                        <RotateCcw className={isArabic ? "ml-1 h-4 w-4" : "mr-1 h-4 w-4"} />
+                      </LightButton>
                       {/* Help Button */}
                       <LightButton onClick={() => setShowControls(true)}>
                         {t("common.help")}
@@ -702,7 +711,7 @@ const TetrisGame = () => {
                     <div className="flex items-center gap-2">
                       {/* Score Button */}
                       <LightButton>
-                        {t("games.blockDrop.score")}: {formatNumber(score)}
+                        {t("games.blockDrop.score")}: {score}
                       </LightButton>
                       {/* Level Button */}
                       <LightButton>
@@ -712,104 +721,79 @@ const TetrisGame = () => {
                       <LightButton>
                         {t("games.blockDrop.lines")}: {lines}
                       </LightButton>
-                      {/* Reset Button */}
-                      <LightButton onClick={resetGame}>
-                        {!isMobile && t("common.reset")}
-                        <RotateCcw className={isArabic ? "ml-1 h-4 w-4" : "mr-1 h-4 w-4"} />
-                      </LightButton>
                     </div>
                   </div>
 
-              {/* Game Area */}
-              <div className="flex justify-center items-start gap-6 my-4 p-2">
-              {!isMobile && (
-                  <div className="bg-card border border-[#DEDEDE] rounded-[5px] p-4 shadow-sm mb-4">
-                    <div className="text-sm text-muted-foreground mb-3 text-center font-medium">
-                      {t("games.blockDrop.next")}
-                    </div>
-                    <div className="flex justify-center">
-                      {renderNextTetrimino()}
+                  {/* Game Area */}
+                  <div className="flex justify-center items-start gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Tetrimino Preview */}
+                      <div className={`bg-card p-6 border-none sm:border-dotted border-[#E8E8E8] ${isArabic ? "border-l-2 border-l-[#E8E8E8]" : "border-r-2 border-r-[#E8E8E8]"}`}>
+                        <div className="bg-card border border-[#DEDEDE] rounded-[5px] p-4 shadow-sm mb-4">
+                          <div className="text-sm text-muted-foreground mb-3 text-center font-medium">
+                            {t("games.blockDrop.next")}
+                          </div>
+                          <div className="flex justify-center">
+                            {renderNextTetrimino()}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Game Board */}
+                      <div className="bg-card p-6">
+                        <div>{renderBoard()}</div>
+                      </div>
                     </div>
                   </div>
-                )}
-                <div>{renderBoard()}</div>
 
-                {isMobile && (
-                  <div className="flex flex-col gap-4">
-                    <div className="bg-card border rounded-lg p-4 shadow-sm">
-                      <div className="text-sm text-muted-foreground mb-2 text-center font-medium">
-                        {t("games.blockDrop.next")}
-                      </div>
-                      <div className="flex justify-center">
-                        {renderNextTetrimino()}
-                      </div>
-                    </div>
-                    
-                    {/* Fixed height container to prevent layout shift */}
-                    <div className="flex flex-col justify-center items-center gap-4 min-h-[120px]">
+                  {/* Touch Controls - Show on mobile and iPad landscape (no keyboard required) */}
+                  <div className={`${isMobile ? 'block' : 'hidden'} mb-6`}>
+                    <div className="flex justify-center mb-4">
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowControls(true)}
-                        className="bg-muted flex items-center gap-1"
+                        variant="outline"
+                        size="lg"
+                        className="w-16 h-16 p-0 border-2"
+                        onClick={() => moveTetrimino(0, 0, true)}
+                        disabled={paused || gameOver || !gameStarted}
                       >
-                        <HelpCircle className="mr-1 h-4 w-4" /> Help
+                        <div className="flex flex-col items-center">
+                          <ChevronUp size={24} />
+                          <span className="text-xs">Rotate</span>
+                        </div>
                       </Button>
-                      <div className="h-10" />
+                    </div>
+
+                    <div className="flex justify-center items-center gap-8">
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-16 h-16 p-0 border-2"
+                        onClick={() => moveTetrimino(-1, 0)}
+                        disabled={paused || gameOver || !gameStarted}
+                      >
+                        {isArabic ? <ChevronRight size={32} /> : <ChevronLeft size={32} />}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-16 h-16 p-0 border-2"
+                        onClick={() => startContinuousMove(0, 1)}
+                        disabled={paused || gameOver || !gameStarted}
+                      >
+                        <ChevronDown size={32} />
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-16 h-16 p-0 border-2"
+                        onClick={() => moveTetrimino(1, 0)}
+                        disabled={paused || gameOver || !gameStarted}
+                      >
+                        {isArabic ? <ChevronLeft size={32} /> : <ChevronRight size={32} />}
+                      </Button>
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Touch Controls - Show on mobile and iPad landscape (no keyboard required) */}
-              <div className={`${isMobile ? 'block' : 'hidden'} mb-6`}>
-                <div className="flex justify-center mb-4">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-16 h-16 p-0 border-2"
-                    onClick={() => moveTetrimino(0, 0, true)}
-                    disabled={paused || gameOver || !gameStarted}
-                  >
-                    <div className="flex flex-col items-center">
-                      <ChevronUp size={24} />
-                      <span className="text-xs">Rotate</span>
-                    </div>
-                  </Button>
-                </div>
-
-                <div className="flex justify-center items-center gap-8">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-16 h-16 p-0 border-2"
-                    onClick={() => moveTetrimino(-1, 0)}
-                    disabled={paused || gameOver || !gameStarted}
-                  >
-                    <ChevronLeft size={32} />
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-16 h-16 p-0 border-2"
-                    onClick={() => startContinuousMove(0, 1)}
-                    disabled={paused || gameOver || !gameStarted}
-                  >
-                    <ChevronDown size={32} />
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-16 h-16 p-0 border-2"
-                    onClick={() => moveTetrimino(1, 0)}
-                    disabled={paused || gameOver || !gameStarted}
-                  >
-                    <ChevronRight size={32} />
-                  </Button>
-                </div>
-              </div>
                 </div>
               </div>
 

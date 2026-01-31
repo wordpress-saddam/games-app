@@ -631,7 +631,7 @@ const SudokuArabic = () => {
 
   const handleLeaderBoard = useCallback(() => {
     if (showCongratulations || gameCompleted) {
-      navigate(`/games/leaderboard?${params.toString()}`);
+      navigate(`/leaderboard?${params.toString()}`);
     } else {
       setDialog(true);
     }
@@ -1025,7 +1025,7 @@ const SudokuArabic = () => {
                   className="bg-gray-500"
                   onClick={() => {
                     setDialog(false);
-                    navigate(`/games/leaderboard?${params.toString()}`);
+                    navigate(`/leaderboard?${params.toString()}`);
                   }}
                 >
                   نعم، مغادرة

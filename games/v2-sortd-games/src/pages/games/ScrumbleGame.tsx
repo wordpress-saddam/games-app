@@ -17,7 +17,7 @@ const ScrambleGame = () => {
 
   const location = useLocation();
   const segments = location.pathname.split("/");
-  const gameTypeFromUrl = segments[2];
+  const gameTypeFromUrl = segments[1];
   const isArabic = gameTypeFromUrl === "headline_scramble_arabic";
   const gameType = isArabic ? "headline_scramble" : gameTypeFromUrl;
 

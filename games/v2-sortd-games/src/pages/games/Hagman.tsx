@@ -529,7 +529,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
       sort_order: "desc",
       score_type: "sum",
     }).toString()}`
-    : `/games/leaderboard?${new URLSearchParams({
+    : `/leaderboard?${new URLSearchParams({
       name: "Hangman",
       duration: "month",
       game_type: "hangman",

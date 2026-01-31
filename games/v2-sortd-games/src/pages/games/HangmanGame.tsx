@@ -18,7 +18,7 @@ const HangmanGame = () => {
   const isArticleView = searchParams.get("src") === "article";
   const location = useLocation();
   const segments = location.pathname.split("/");
-  const gameTypeFromUrl = segments[2];
+  const gameTypeFromUrl = segments[1];
   const isArabic = gameTypeFromUrl === "hangman-arabic";
   const gameType = isArabic ? "hangman" : gameTypeFromUrl;
 

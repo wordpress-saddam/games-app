@@ -7,16 +7,20 @@ const LeaderboardButton: React.FC<{ text: string, leaderboardUrl: string }> = ({
     <button
       onClick={() => window.location.href = leaderboardUrl}
       className="
-        inline-flex items-center gap-3
-        px-4 py-2
-        rounded-[8px]
-        bg-gradient-to-r from-[#C62426] to-[#3F1313]
-        text-white
-        font-extrabold
-        text-[16px]
-        leading-none
-        text-right
-        shadow-md
+        inline-flex 
+        items-center 
+        justify-center 
+        gap-2 md:gap-3 
+        px-2 md:px-4 py-2 
+        rounded-[8px] 
+        bg-gradient-to-r from-[#C62426] to-[#3F1313] 
+        text-white 
+        font-extrabold 
+        text-[12px] md:text-[16px] 
+        leading-none 
+        shadow-md 
+        w-full 
+        md:w-auto
       "
       dir="rtl"
     >
@@ -27,7 +31,7 @@ const LeaderboardButton: React.FC<{ text: string, leaderboardUrl: string }> = ({
       <img
         src={LeaderboardIcon}
         alt="Trophy Icon"
-        className="w-5 h-5"
+        className="w-4 h-4 md:w-5 md:h-5"
       />
     </button> 
   );

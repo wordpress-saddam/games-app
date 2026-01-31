@@ -196,6 +196,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
     const [allGamesCompleted, setAllGamesCompleted] = useState(false);
     const { toast } = useToast();
     const [showInstructions, setShowInstructions] = useState(false);
+    const [ShowArticleLink, setShowArticleLink] = useState(false);
 
     // ref for the input box and handlers to manage single-letter input + Enter key
     const inputRef = useRef<HTMLInputElement | null>(null);
@@ -574,7 +575,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
             sort_order: "desc",
             score_type: "sum",
         }).toString()}`
-        : `/games/leaderboard?${new URLSearchParams({
+        : `/leaderboard?${new URLSearchParams({
             name: t("games.hangman.name"),
             duration: "month",
             game_type: "hangman",
@@ -735,18 +736,18 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                 )}
 
                 <div className="game-container3" translate="no">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
                         {/* Main Content: Games Grid - Takes 2 columns on large screens */}
                         <div className="lg:col-span-2">
                             {/* Header Section */}
                             <div className="mb-6" translate="no">
                                 <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
-                                <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                                <div className={`flex flex-col gap-4 mb-4 px-2 md:flex-row md:items-center md:justify-between ${isArabic ? "text-right" : "text-left"}`} translate="no">
                                     <div className="flex items-center gap-2">
                                         <img src={HangmanImage} alt="Hangman Logo" className="w-20 h-20" />
-                                        <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.hangman.name")}</h2>
+                                        <h2 className="text-xl md:text-3xl font-bold" translate="no">{t("games.hangman.name")}</h2>
                                     </div>
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex w-full md:w-auto md:flex-row gap-2">
                                         {/* Leaderboard Button */}
                                         {!user?.isAnonymous && (
                                             isArticleView ? (
@@ -784,52 +785,52 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
 
                             <hr className="w-full border-0 border-t-2 border-dotted border-gray-300 opacity-80" />
 
-                {/* All Games Completed Message */}
-                {allGamesCompleted && hasDeclinedReplay && !isArticleView && (
-                    <div className="mb-6 bg-card border border-border p-6 rounded-lg shadow-lg text-center">
-                        <h3 className="text-2xl font-semibold mb-4 text-primary">
-                            {t("games.hangman.allGamesCompleted")}
-                        </h3>
-                        <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg mb-4">
-                            <div className="text-xl font-semibold text-secondary mb-2">
-                                {t("games.hangman.totalScore", { score: accumulatedScore })}
-                            </div>
-                            <div className="text-muted-foreground">
-                                {score === gameData.length
-                                    ? t("games.hangman.perfectSessionAmazingWork")
-                                    : score > gameData.length / 2
-                                        ? t("games.hangman.greatSessionWellDone")
-                                        : t("games.hangman.goodEffortTryAgainToImprove")}
-                            </div>
-                        </div>
-                        <p className="text-muted-foreground mb-6">
-                            {t("games.hangman.youveFinishedAllAvailableGamesWellAddNewGamesSoon")}
-                        </p>
-                        <div className="space-y-3">
-                            <PlayAgainButton onClick={handleReplayConfirm}>
-                                {t("games.hangman.replayTheseGames")}
-                                <RefreshCw className="mr-1 h-4 w-4" />
-                            </PlayAgainButton>
-                            <p className="text-sm text-muted-foreground">
-                                {t("games.hangman.orWaitForNewGamesToBeAdded")}
-                            </p>
-                        </div>
-                    </div>
-                )}
+                            {/* All Games Completed Message */}
+                            {allGamesCompleted && hasDeclinedReplay && !isArticleView && (
+                                <div className="mb-6 bg-card border border-border p-6 rounded-lg shadow-lg text-center">
+                                    <h3 className="text-2xl font-semibold mb-4 text-primary">
+                                        {t("games.hangman.allGamesCompleted")}
+                                    </h3>
+                                    <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-4 rounded-lg mb-4">
+                                        <div className="text-xl font-semibold text-secondary mb-2">
+                                            {t("games.hangman.totalScore", { score: accumulatedScore })}
+                                        </div>
+                                        <div className="text-muted-foreground">
+                                            {score === gameData.length
+                                                ? t("games.hangman.perfectSessionAmazingWork")
+                                                : score > gameData.length / 2
+                                                    ? t("games.hangman.greatSessionWellDone")
+                                                    : t("games.hangman.goodEffortTryAgainToImprove")}
+                                        </div>
+                                    </div>
+                                    <p className="text-muted-foreground mb-6">
+                                        {t("games.hangman.youveFinishedAllAvailableGamesWellAddNewGamesSoon")}
+                                    </p>
+                                    <div className="space-y-3">
+                                        <PlayAgainButton onClick={handleReplayConfirm}>
+                                            {t("games.hangman.replayTheseGames")}
+                                            <RefreshCw className="mr-1 h-4 w-4" />
+                                        </PlayAgainButton>
+                                        <p className="text-sm text-muted-foreground">
+                                            {t("games.hangman.orWaitForNewGamesToBeAdded")}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Game Content */}
                             {!(allGamesCompleted && hasDeclinedReplay && !isArticleView) && (
                                 <div className="flex flex-col md:flex-row w-full gap-4 mt-8" translate="no">
                                     <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden pb-0 w-full md:w-[100%]" translate="no">
                                         {/* Score and Round Info */}
-                                        <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                                        <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE]">
                                             <div className="flex items-center gap-2">
                                                 {/* Round Indicator */}
                                                 <BlueButton >
                                                 {t("games.hangman.round", { current: currentGameIndex + 1, total: gameData.length })}
                                                 </BlueButton>
                                                 {/* Help Button */}
-                                                <LightButton onClick={() => setShowInstructions(true)}>
+                                                <LightButton onClick={() => {setShowInstructions(true); setShowArticleLink(true);}}>
                                                     {t("common.help")}
                                                     <HelpCircle className="mr-1 h-4 w-4" />
                                                 </LightButton>
@@ -846,7 +847,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                         </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className={`bg-card p-6 border-dotted border-[#E8E8E8] 
+                                <div className={`bg-card p-6 border-none sm:border-dotted border-[#E8E8E8] 
                                 ${isArabic ? "border-l-2 border-l-[#E8E8E8]" : "border-r-2 border-r-[#E8E8E8]"}
                                 `}>
                                     <div className="mb-6">
@@ -956,7 +957,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                             </div>
                         </div>
                                     {/* Article Link - Hidden on mobile, shown on desktop */}
-                                    {!isArticleView && currentGame?.article_detail ? (
+                                    {!isArticleView && currentGame?.article_detail && (ShowArticleLink || isCompleted) ? (
                                         <div className="hidden md:block py-3 px-3">
                                             <a
                                                 href={addUtmParams(currentGame?.article_detail?.link || "")}
@@ -1000,6 +1001,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                             </a>
                                         </div>
                                         ) : (
+                                            ShowArticleLink || isCompleted && (
                                             <a
                                                 href={addUtmParams(currentGame?.article_detail?.link || "")}
                                                 target="_blank"
@@ -1041,6 +1043,7 @@ const Hangman: React.FC<HangmanProps> = ({ gameData }) => {
                                                     </p>
                                                 </div>
                                             </a>
+                                            )
                                     )}
 
                                     {isCompleted && (

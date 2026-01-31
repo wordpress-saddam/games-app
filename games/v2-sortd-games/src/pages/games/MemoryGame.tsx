@@ -155,9 +155,7 @@ const GameCard = React.memo(({
 
         {/* Card Front */}
         <div
-          className={`absolute w-full h-full flex items-center justify-center bg-primary/10 border ${
-            card.matched ? "border-accent" : "border-primary"
-          } rotate-y-180 backface-hidden ${
+          className={`absolute w-full h-full flex items-center justify-center border border-[#DEDEDE] rotate-y-180 backface-hidden ${
             card.flipped ? "visible" : "invisible"
           }`}
         >
@@ -443,7 +441,7 @@ const MemoryGame = () => {
     }
   }, [difficulty]);
 
-  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+  const leaderboardUrl = `/leaderboard?${new URLSearchParams({
     name: "Card Pair Challenge",
     duration: "month",
     game_type: "card-pair-challenge",
@@ -504,18 +502,18 @@ const MemoryGame = () => {
       <section className="py-8">
         <div className="container mx-auto px-4" dir={isArabic ? "rtl" : "ltr"}>
           <div className="game-container3" translate="no">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
               {/* Main Content: Games Grid - Takes 2 columns on large screens */}
               <div className="lg:col-span-2">
                 {/* Header Section */}
                 <div className="mb-6" translate="no">
                   <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
-                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                  <div className={`flex flex-col gap-4 mb-4 px-2 md:flex-row md:items-center md:justify-between ${isArabic ? "text-right" : "text-left"}`} translate="no">
                     <div className="flex items-center gap-2">
                       <img src={MemoryGameImage} alt="Memory Game Logo" className="w-20 h-20" />
-                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.cardPairChallenge.name")}</h2>
+                      <h2 className="text-xl md:text-3xl font-bold" translate="no">{t("games.cardPairChallenge.name")}</h2>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex w-full md:w-auto md:flex-row gap-2">
                       {/* Leaderboard Button */}
                       {!user?.isAnonymous && (
                         <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
@@ -530,7 +528,7 @@ const MemoryGame = () => {
 
                 <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
                   {/* Score and Round Info */}
-                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE]">
                     <div className="flex items-center gap-2">
                       {/* Difficulty Button */}
                       <BlueButton onClick={() => setShowDifficulty(true)}>
@@ -553,32 +551,32 @@ const MemoryGame = () => {
                     </div>
                   </div>
 
-              <div className={`grid ${gridCols} gap-2 md:gap-4 max-w-sm mx-auto my-8 transition-all duration-300 ${isChangingDifficulty ? 'opacity-50' : 'opacity-100'}`}>
-                {isChangingDifficulty ? (
-                  <div className="col-span-full flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <div className={`grid ${gridCols} gap-2 md:gap-4 max-w-sm mx-auto py-8 px-4 transition-all duration-300 ${isChangingDifficulty ? 'opacity-50' : 'opacity-100'}`}>
+                    {isChangingDifficulty ? (
+                      <div className="col-span-full flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : (
+                      cards.map((card, i) => (
+                        <GameCard 
+                          key={card.id}
+                          card={card}
+                          onClick={flipCard}
+                          disabled={flippedCards.length >= 2}
+                          index={i}
+                          isJustMatched={justMatchedIds.includes(card.id)}
+                          isJustMismatched={justMismatchedIds.includes(card.id)}
+                        />
+                      ))
+                    )}
                   </div>
-                ) : (
-                  cards.map((card, i) => (
-                    <GameCard 
-                      key={card.id}
-                      card={card}
-                      onClick={flipCard}
-                      disabled={flippedCards.length >= 2}
-                      index={i}
-                      isJustMatched={justMatchedIds.includes(card.id)}
-                      isJustMismatched={justMismatchedIds.includes(card.id)}
-                    />
-                  ))
-                )}
-              </div>
-              <div className="text-center">
-                {gameCompleted ? (
-                  <PlayAgainButtonTopRounded onClick={resetGame}>{t("common.playAgain")}</PlayAgainButtonTopRounded>
-                ) : (
-                <ResetButtonTopRounded onClick={resetGame}>{t("common.reset")}</ResetButtonTopRounded>
-                )}
-              </div>
+                  <div className="text-center">
+                    {gameCompleted ? (
+                      <PlayAgainButtonTopRounded onClick={resetGame}>{t("common.playAgain")}</PlayAgainButtonTopRounded>
+                    ) : (
+                    <ResetButtonTopRounded onClick={resetGame}>{t("common.reset")}</ResetButtonTopRounded>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -592,8 +590,6 @@ const MemoryGame = () => {
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
       {/* Dialogs */}
       <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
@@ -804,9 +800,9 @@ const MemoryGame = () => {
           }
           
           .grid {
-            -webkit-transform: translateZ(0);
-            transform: translateZ(0);
-            will-change: auto;
+            // -webkit-transform: translateZ(0);
+            // transform: translateZ(0);
+            // will-change: auto;
           }
           
           /* Prevent flickering during grid layout changes */
@@ -824,6 +820,8 @@ const MemoryGame = () => {
           }
         }
       `}</style>
+        </div>
+      </section>
     </Layout>
   );
 };

@@ -640,7 +640,7 @@ const SudokuGame = () => {
     return isAltSubgrid ? "bg-muted/20" : "";
   };
 
-  const leaderboardUrl = `/games/leaderboard?${new URLSearchParams({
+  const leaderboardUrl = `/leaderboard?${new URLSearchParams({
     name: t("games.sudoku.name"),
     duration: "month",
     game_type: "sudoku",
@@ -693,18 +693,18 @@ const SudokuGame = () => {
           )}
 
           <div className="game-container3" translate="no">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
               {/* Main Content: Games Grid - Takes 2 columns on large screens */}
               <div className="lg:col-span-2">
                 {/* Header Section */}
                 <div className="mb-6" translate="no">
                   <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
-                  <div className={`flex items-center justify-between mb-4 px-2 ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                  <div className={`flex flex-col gap-4 mb-4 px-2 md:flex-row md:items-center md:justify-between ${isArabic ? "text-right" : "text-left"}`} translate="no">
                     <div className="flex items-center gap-2">
                       <img src={SudokuImage} alt="Sudoku Logo" className="w-20 h-20" />
-                      <h2 className="text-2xl md:text-3xl font-bold" translate="no">{t("games.sudoku.name")}</h2>
+                      <h2 className="text-xl md:text-3xl font-bold" translate="no">{t("games.sudoku.name")}</h2>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex w-full md:w-auto md:flex-row gap-2">
                       {/* Leaderboard Button */}
                       {!user?.isAnonymous && (
                         <LeaderboardButton text={t("common.leaderboard")} leaderboardUrl={leaderboardUrl} />
@@ -719,7 +719,7 @@ const SudokuGame = () => {
 
                 <div className="bg-card border border-[#DEDEDE] rounded-[5px] shadow-lg overflow-hidden mt-8" translate="no">
                   {/* Score and Round Info */}
-                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE] flex-row-reverse">
+                  <div className="bg-[#F0F0F0] p-4 flex flex-wrap items-center justify-between gap-1 border-b border-[#DEDEDE]">
                     <div className="flex items-center gap-2">
                       {/* Difficulty Button */}
                       <BlueButton onClick={() => setShowDifficulty(true)}>

@@ -21,7 +21,7 @@ const QuizGame = () => {
 
   const location = useLocation();
   const segments = location.pathname.split("/");
-  const gameType = segments[2];
+  const gameType = segments[1];
   const gameId = searchParams.get("id");
   
   // Game schema for SEO

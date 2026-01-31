@@ -17,7 +17,13 @@ import GamesServices from "../../../v2-services/games-service";
 import { useUser } from "../../context/UserContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
-import { formatTimeWithHours, formatNumberForDisplay, formatNumber } from "../../utils/numberFormatter";
+import { formatTimeWithHours, formatNumber } from "../../utils/numberFormatter";
+import FancyHeadline from "@/components/ui/FancyHeadline";
+import LeaderboardIcon from "../../assets/leaderboard-icon.png";
+import MostReadSidebar from "@/components/MostReadSidebar";
+import HowToPlayInstruction from "@/components/ui/HowToPlayInstruction";
+import GamesMainHeadline from "@/components/ui/GamesMainHeadline";
+import BackToHomeIconRed from "../../assets/back-to-home-icon-red.png";
 
 interface LeaderboardEntry {
   user_id: string;
@@ -32,7 +38,8 @@ interface LeaderboardData {
 }
 
 const LeaderBoard = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { user } = useUser();
@@ -178,7 +185,7 @@ console.log(Game);
                   {" "}
                   {player.user_name}
                 </h3>
-                <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                {/* <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                   {Game === "Card Pair Challenge" || Game == "Mine Hunt Logic" 
                     ? convertSecondsToTime(player.score)
                     : formatNumber(player.score, {
@@ -186,22 +193,28 @@ console.log(Game);
                         maximumFractionDigits: 2,
                       })}
                   {Game == "Card Pair Challenge" || Game == "Mine Hunt Logic"  ? "" : t("leaderboard.pts")}
-                </div>
+                </div> */}
               </div>
 
               {/* Podium Bar */}
               <div
                 className={`transition-all duration-300 ease-out ${
                   heights[heightIndex]
-                } w-12 bg-gradient-to-t ${
-                  rankColors[actualRank] ||
-                  "from-purple-900 via-purple-700 to-purple-500"
-                } rounded-t-lg shadow-xl flex items-end justify-center`}
+                } w-12 bg-white rounded-b-none rounded-[4px] flex items-end justify-center relative`}
               >
-                <div className="text-white font-bold text-sm pb-1">
+                <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 absolute top-1">
+                  {Game === "Card Pair Challenge" || Game == "Mine Hunt Logic" 
+                  ? convertSecondsToTime(player.score)
+                  : formatNumber(player.score, {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 2,
+                  })}  
+                  {Game == "Card Pair Challenge" || Game == "Mine Hunt Logic"  ? "" : t("leaderboard.pts")}
+                </div>
+                {/* <div className="font-bold text-sm pb-1">
                   {" "}
                   {actualRank}
-                </div>
+                </div> */}
               </div>
             </div>
           );
@@ -214,9 +227,10 @@ console.log(Game);
     <div className="text-center ">
       <div className="relative mb-4">
         {" "}
-        <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 to-indigo-900 rounded-full flex items-center justify-center animate-pulse mx-auto">
+        <div className="w-16 h-16 bg-gradient-to-br from-yellow-100 to-amber-100 dark:from-yellow-900 dark:to-amber-900 rounded-full flex items-center justify-center animate-pulse mx-auto shadow-lg">
           {" "}
-          <Trophy className="text-purple-500 animate-bounce" size={32} />{" "}
+          <img src={LeaderboardIcon} alt="No Champions" className="w-8 h-8 mx-auto animate-bounce" />
+          {/* <Trophy className="text-purple-500 animate-bounce" size={32} />{" "} */}
         </div>
       </div>
 
@@ -257,27 +271,35 @@ console.log(Game);
 
   return (
     <Layout>
-      <div className="game-area">
-        <div className="game-container">
-          <div className="text-center mb-5">
-            <div className="text-center mb-2">
-              <div className="inline-flex items-center gap-2">
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 to-orange-500  shadow-lg">
-                  <Trophy className="text-white" size={24} />
+      <section className="py-8">
+      <div className="container mx-auto px-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <div className="mb-6" translate="no">
+            <GamesMainHeadline title={t("common.games")} width={isArabic ? 120 : 144} />
+            <div className={`flex flex-col gap-4 mb-4 px-2 md:flex-row md:items-center md:justify-between ${isArabic ? "text-right" : "text-left"}`} translate="no">
+                <div className="flex items-center gap-2">
+                  <img src={LeaderboardIcon} alt="Leaderboard Icon" className="w-10 h-10" />
+                  <h2 className="text-xl md:text-3xl font-bold">
+                    {Game} {isMobile ? "" : t("leaderboard.leaderboard")}
+                  </h2>
                 </div>
-                <h1 className="text-2xl md:text-3xl font-bold  whitespace-nowrap">
-                  {Game} {isMobile ? "" : t("leaderboard.leaderboard")}
-                </h1>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="flex items-center justify-center gap-2 md:gap-3 font-extrabold text-[12px] md:text-[16px] text-[#C62426] bg-white border border-black px-2 md:px-4 py-2 rounded-md w-full md:w-auto" dir="rtl"
+                  >
+                    
+                    {(isArabic ? 
+                    (<>{Game} {t("leaderboard.backTo")}</> ): 
+                    (<>{t("leaderboard.backTo")} {Game}</>)
+                    )}
+                    <img src={BackToHomeIconRed} alt="Home Icon" className="w-5 h-5" />
+                </button>
               </div>
-            </div>
 
-            <p className="text-sm text-muted-foreground">
-              {Game == "Card Pair Challenge" || Game == "Mine Hunt Logic" 
-                ? t("leaderboard.theLessTheTimeTheHigherTheScore")
-                : t("leaderboard.competeWithTheFinestMindsAndClimbToTheTop")}
-            </p>
+            
           </div>
-
+{/* 
           <div className="text-center mt-2 mb-5">
             <button
               onClick={() => navigate(-1)}
@@ -287,7 +309,7 @@ console.log(Game);
               <Play size={12} />
               {t("leaderboard.backTo")} {Game}
             </button>
-          </div>
+          </div> */}
 
           {loading ? (
             <div className="text-center py-12">
@@ -298,41 +320,10 @@ console.log(Game);
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-8 mb-5">
-              {/* Left Panel - Podium */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-lg border">
-                {" "}
-                <div className="text-center mb-4">
-                  {" "}
-                  <h3 className="text-md font-semibold text-slate-800 dark:text-white ">
-                    {" "}
-                    {t("leaderboard.hallOfChampions")}
-                  </h3>
-                  <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-indigo-500 mx-auto rounded-full"></div>
-                </div>
-                {leaderboardData && leaderboardData.leaderboard.length > 0 ? (
-                  renderPodium()
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-center h-40">
-                    {" "}
-                    <Trophy className="text-slate-400 mb-2" size={40} />{" "}
-                    <p className="text-slate-600 dark:text-slate-400">
-                      {t("leaderboard.noChampionsYet")}
-                    </p>
-                  </div>
-                )}
-              </div>
-
+              
               {/* Right Panel - Rankings */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-lg border">
-                {" "}
-                <div className="text-center mb-4">
-                  {" "}
-                  <h3 className="text-md font-semibold text-slate-800 dark:text-white ">
-                    {" "}
-                    {t("leaderboard.allPlayers")}
-                  </h3>
-                  <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-indigo-500 mx-auto rounded-full"></div>
-                </div>
+              <div className="bg-white dark:bg-slate-800 py-4 border border-[#DEDEDE] rounded-[8px]">
+                <FancyHeadline>{t("leaderboard.allPlayers")}</FancyHeadline>
                 {leaderboardData && leaderboardData.leaderboard.length > 0 ? (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {" "}
@@ -402,10 +393,45 @@ console.log(Game);
                   renderEmptyState()
                 )}
               </div>
+              {/* Left Panel - Podium */}
+              <div className="bg-white dark:bg-slate-800  pt-4 rounded-[8px]"
+                style={{
+                  background: "linear-gradient(360deg, #FE9802 0%, #FFDE3F 100%)",
+                }}>
+                {" "}
+                <FancyHeadline>
+                  {t("leaderboard.hallOfChampions")}
+                </FancyHeadline>
+                {leaderboardData && leaderboardData.leaderboard.length > 0 ? (
+                  renderPodium()
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-center h-40">
+                    {" "}
+                    <img src={LeaderboardIcon} alt="No Champions" className="w-24 h-24 mx-auto" />
+                    {" "}
+                    <p className="text-slate-600 dark:text-slate-400">
+                      {t("leaderboard.noChampionsYet")}
+                    </p>
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
+          </div>
+          <div className="lg:col-span-1">
+            <HowToPlayInstruction title={t("common.howToPlay")} text="" >
+              <p className="text-sm">
+                {Game == "Card Pair Challenge" || Game == "Mine Hunt Logic" 
+                  ? t("leaderboard.theLessTheTimeTheHigherTheScore")
+                  : t("leaderboard.competeWithTheFinestMindsAndClimbToTheTop")}
+              </p>
+            </HowToPlayInstruction>
+            <MostReadSidebar />
+          </div>
         </div>
       </div>
+      </section>
     </Layout>
   );
 };
